@@ -1,0 +1,105 @@
+import os
+import sqlite3
+import uuid
+from pathlib import Path
+
+import pytest
+
+
+PATIENT_ID = "271ae31d-1a31-4dfa-9d3a-8d3e2e46b101"
+
+
+@pytest.fixture
+def consultation_payload():
+    return {
+        "patient_id": PATIENT_ID,
+        "treatment_notes": "Patient reports fever and mild cough after travel.",
+        "diagnosis_codes": ["A00.0", "A00.1"],
+        "primary_code": "A00.0",
+        "status": "completed",
+    }
+
+
+def test_create_consultation_successfully(authenticated_client, consultation_payload):
+    response = authenticated_client.post("/consultation", json=consultation_payload)
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["patient_id"] == PATIENT_ID
+    assert payload["status"] == "completed"
+    assert payload["treatment_notes"] == consultation_payload["treatment_notes"]
+    assert any(d["code"] == "A00.0" and d["is_primary"] for d in payload["diagnoses"])
+
+    db_path = Path(os.environ["CLINICCARE_DB_PATH"])
+
+    with sqlite3.connect(db_path) as conn:
+        count = conn.execute("SELECT COUNT(*) FROM consultations WHERE id = ?", (payload["id"],)).fetchone()[0]
+    assert count == 1
+
+
+def test_create_consultation_with_unknown_patient_returns_404(authenticated_client):
+    payload = {
+        "patient_id": str(uuid.uuid4()),
+        "treatment_notes": "Patient has a repeated checkup request.",
+        "diagnosis_codes": ["A00.0"],
+        "primary_code": "A00.0",
+    }
+
+    response = authenticated_client.post("/consultation", json=payload)
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Patient not found"
+
+
+def test_create_consultation_with_invalid_diagnosis_code_returns_422(authenticated_client):
+    payload = {
+        "patient_id": PATIENT_ID,
+        "treatment_notes": "Patient reports fever and mild cough after travel.",
+        "diagnosis_codes": ["NOT_A_REAL_CODE"],
+        "primary_code": "NOT_A_REAL_CODE",
+    }
+
+    response = authenticated_client.post("/consultation", json=payload)
+
+    assert response.status_code == 422
+    assert "Unknown diagnosis codes" in response.json()["detail"]
+
+
+def test_create_consultation_requires_primary_code_to_be_in_diagnosis_list(authenticated_client):
+    payload = {
+        "patient_id": PATIENT_ID,
+        "treatment_notes": "Patient reports fever and mild cough after travel.",
+        "diagnosis_codes": ["A00.0", "A00.1"],
+        "primary_code": "J00",
+    }
+
+    response = authenticated_client.post("/consultation", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_create_consultation_rejects_blank_treatment_notes(authenticated_client):
+    payload = {
+        "patient_id": PATIENT_ID,
+        "treatment_notes": "   ",
+        "diagnosis_codes": ["A00.0"],
+        "primary_code": "A00.0",
+    }
+
+    response = authenticated_client.post("/consultation", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_consultation_create_requires_authentication(client):
+    payload = {
+        "patient_id": PATIENT_ID,
+        "treatment_notes": "This should not be created without a login.",
+        "diagnosis_codes": ["A00.0"],
+        "primary_code": "A00.0",
+    }
+
+    response = client.post("/consultation", json=payload)
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
