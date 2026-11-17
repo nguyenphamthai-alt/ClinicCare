@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Environment files
+.env
+
+# SQLite local data
+*.db
+database/*.db
+
+database/cliniccare.db

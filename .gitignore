@@ -1,0 +1,40 @@
+.DS_Store
+**/.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+**/__pycache__/
+*.pyc
+*.pyo
+**/.venv/
+**/venv/
+**/.pytest_cache/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# SQLite / local data
+**/*.db
+**/*.sqlite3
+**/*.sqlite
+
+# Node / Nuxt
+**/node_modules/
+**/.nuxt/
+**/.output/
+**/.data/
+**/.cache/
+**/dist/
+
+# Logs and temp
+*.log
+logs/
+*.tmp
+
+# IDE / OS
+.idea/
+.vscode/
+.fleet/
