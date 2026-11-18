@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import type { Consultation } from '~/types'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({
+  middleware: 'auth',
+  layout: 'app',
+  title: 'Consultations',
+  subtitle: 'Review completed and pending patient visits.'
+})
 
 const api = useApi()
 const consultations = ref<Consultation[]>([])
@@ -43,6 +48,7 @@ const loadConsultations = async (requestedPage = page.value) => {
 }
 
 watch(searchTerm, () => {
+  requestSequence += 1
   if (searchTimer) clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
     page.value = 1
@@ -55,37 +61,30 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  requestSequence += 1
   if (searchTimer) clearTimeout(searchTimer)
 })
 </script>
 
 <template>
-  <div class="app-shell">
-    <AppSidebar />
-
-    <main class="main-panel">
-      <AppHeader title="Consultations" subtitle="Review completed and pending patient visits." />
-
-      <div class="page-content">
-        <div class="toolbar">
-          <div class="search-box">
-            <input v-model="searchTerm" type="search" placeholder="Search patient or diagnosis" />
-          </div>
-
-          <NuxtLink to="/consultations/new" class="primary-button primary-button--inline">New Consultation</NuxtLink>
-        </div>
-
-        <ConsultationTable :consultations="consultations" :loading="loading" :error="error" />
-
-        <div v-if="consultations.length || page > 1" class="consultation-pagination">
-          <div class="page-actions">
-            <button class="page-button" type="button" :disabled="page === 1 || loading" @click="loadConsultations(page - 1)">Prev</button>
-            <span class="page-number">Page {{ page }}</span>
-            <button class="page-button" type="button" :disabled="!hasMore || loading" @click="loadConsultations(page + 1)">Next</button>
-          </div>
-        </div>
+  <div class="page-content">
+    <div class="toolbar">
+      <div class="search-box">
+        <input v-model="searchTerm" type="search" maxlength="200" placeholder="Search patient or diagnosis" />
       </div>
-    </main>
+
+      <NuxtLink to="/consultations/new" class="primary-button primary-button--inline">New Consultation</NuxtLink>
+    </div>
+
+    <ConsultationTable :consultations="consultations" :loading="loading" :error="error" />
+
+    <div v-if="consultations.length || page > 1" class="consultation-pagination">
+      <div class="page-actions">
+        <button class="page-button" type="button" :disabled="page === 1 || loading" @click="loadConsultations(page - 1)">Prev</button>
+        <span class="page-number">Page {{ page }}</span>
+        <button class="page-button" type="button" :disabled="!hasMore || loading" @click="loadConsultations(page + 1)">Next</button>
+      </div>
+    </div>
   </div>
 </template>
 

@@ -1,19 +1,12 @@
 <script setup lang="ts">
 import type { Consultation } from '~/types'
+import { formatDateTime } from '~/utils/date'
 
 const props = defineProps<{
   consultations: Consultation[]
   loading: boolean
   error: string | null
 }>()
-
-const formatDate = (value: string) => {
-  const parsed = new Date(value)
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString('en-GB', {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  })
-}
 
 const formatCodes = (consultation: Consultation) =>
   consultation.diagnoses.map((diagnosis) => diagnosis.code).join(', ') || '—'
@@ -44,7 +37,7 @@ const formatCodes = (consultation: Consultation) =>
                 <small>{{ consultation.doctor_name }}</small>
               </div>
             </td>
-            <td>{{ formatDate(consultation.consultation_date) }}</td>
+            <td>{{ formatDateTime(consultation.consultation_date) }}</td>
             <td>
               <div class="code-stack">
                 <span v-for="diagnosis in consultation.diagnoses.slice(0, 2)" :key="`${consultation.id}-${diagnosis.code}`" class="diagnosis-code">

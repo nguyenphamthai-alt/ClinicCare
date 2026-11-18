@@ -1,18 +1,9 @@
-import uuid
 from datetime import date
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-
-def _validate_uuid4(value: str, field_name: str) -> str:
-    try:
-        parsed = uuid.UUID(str(value))
-    except (ValueError, AttributeError, TypeError):
-        raise ValueError(f"{field_name} must be a valid UUID")
-    if parsed.version != 4:
-        raise ValueError(f"{field_name} must be a UUID v4")
-    return str(parsed)
+from app.schemas.validators import validate_uuid4
 
 
 class ConsultationCreate(BaseModel):
@@ -37,7 +28,7 @@ class ConsultationCreate(BaseModel):
     @field_validator("patient_id")
     @classmethod
     def validate_patient_id(cls, value: str) -> str:
-        return _validate_uuid4(value, "patient_id")
+        return validate_uuid4(value, "patient_id")
 
     @field_validator("treatment_notes")
     @classmethod
@@ -79,4 +70,4 @@ class ConsultationOut(BaseModel):
     @field_validator("id", "patient_id")
     @classmethod
     def validate_uuid_fields(cls, value: str, info) -> str:
-        return _validate_uuid4(value, info.field_name)
+        return validate_uuid4(value, info.field_name)

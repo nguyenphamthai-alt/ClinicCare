@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import type { ConsultationFormState, DiagnosisItem, Patient } from '~/types'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({
+  middleware: 'auth',
+  layout: 'app',
+  title: 'New Consultation',
+  subtitle: 'Document a clinic visit and diagnosis details.'
+})
 
 const api = useApi()
 
@@ -23,47 +28,69 @@ const patientLoading = ref(false)
 const diagnosisLoading = ref(false)
 const submitError = ref('')
 const submitting = ref(false)
+let patientTimer: ReturnType<typeof setTimeout> | undefined
+let diagnosisTimer: ReturnType<typeof setTimeout> | undefined
+let patientRequest = 0
+let diagnosisRequest = 0
 
-watch(patientQuery, async (value) => {
-  if (!value.trim()) {
+watch(patientQuery, (value) => {
+  const request = ++patientRequest
+  if (patientTimer) clearTimeout(patientTimer)
+  const term = value.trim()
+  if (!term || term.length > 100 || (form.patientId && value === form.patientName)) {
     patientResults.value = []
-    return
-  }
-
-  patientLoading.value = true
-
-  try {
-    patientResults.value = await api.get<Patient[]>('/patients', { search: value.trim(), limit: 8 })
-  } catch (error) {
-    patientResults.value = []
-    console.error(error)
-  } finally {
     patientLoading.value = false
-  }
-})
-
-watch(diagnosisQuery, async (value) => {
-  if (!value.trim()) {
-    diagnosisResults.value = []
     return
   }
 
-  diagnosisLoading.value = true
+  patientResults.value = []
+  patientLoading.value = true
+  patientTimer = setTimeout(async () => {
+    try {
+      const results = await api.get<Patient[]>('/patients', { search: term, limit: 8 })
+      if (request === patientRequest) patientResults.value = results
+    } catch (error) {
+      if (request === patientRequest) {
+        patientResults.value = []
+        console.error(error)
+      }
+    } finally {
+      if (request === patientRequest) patientLoading.value = false
+    }
+  }, 300)
+}, { flush: 'sync' })
 
-  try {
-    diagnosisResults.value = await api.get<DiagnosisItem[]>('/diagnosis', {
-      search: value.trim(),
-      limit: 10
-    })
-  } catch (error) {
+watch(diagnosisQuery, (value) => {
+  const request = ++diagnosisRequest
+  if (diagnosisTimer) clearTimeout(diagnosisTimer)
+  const term = value.trim()
+  if (!term || term.length > 100) {
     diagnosisResults.value = []
-    console.error(error)
-  } finally {
     diagnosisLoading.value = false
+    return
   }
-})
+
+  diagnosisResults.value = []
+  diagnosisLoading.value = true
+  diagnosisTimer = setTimeout(async () => {
+    try {
+      const results = await api.get<DiagnosisItem[]>('/diagnosis', { search: term, limit: 10 })
+      if (request === diagnosisRequest) diagnosisResults.value = results
+    } catch (error) {
+      if (request === diagnosisRequest) {
+        diagnosisResults.value = []
+        console.error(error)
+      }
+    } finally {
+      if (request === diagnosisRequest) diagnosisLoading.value = false
+    }
+  }, 300)
+}, { flush: 'sync' })
 
 const selectPatient = (patient: Patient) => {
+  patientRequest += 1
+  if (patientTimer) clearTimeout(patientTimer)
+  patientLoading.value = false
   form.patientId = patient.id
   form.patientName = patient.full_name
   patientQuery.value = patient.full_name
@@ -71,6 +98,9 @@ const selectPatient = (patient: Patient) => {
 }
 
 const selectDiagnosis = (item: DiagnosisItem) => {
+  diagnosisRequest += 1
+  if (diagnosisTimer) clearTimeout(diagnosisTimer)
+  diagnosisLoading.value = false
   if (!form.diagnosisCodes.includes(item.code)) {
     form.diagnosisCodes.push(item.code)
   }
@@ -79,6 +109,13 @@ const selectDiagnosis = (item: DiagnosisItem) => {
   diagnosisQuery.value = ''
   diagnosisResults.value = []
 }
+
+onBeforeUnmount(() => {
+  patientRequest += 1
+  diagnosisRequest += 1
+  if (patientTimer) clearTimeout(patientTimer)
+  if (diagnosisTimer) clearTimeout(diagnosisTimer)
+})
 
 const removeDiagnosis = (code: string) => {
   form.diagnosisCodes = form.diagnosisCodes.filter((item) => item !== code)
@@ -128,83 +165,75 @@ const submitConsultation = async () => {
 </script>
 
 <template>
-  <div class="app-shell">
-    <AppSidebar />
+  <div class="page-content">
+    <form class="card form-card" @submit.prevent="submitConsultation">
+      <div class="form-grid">
+        <div class="field-column field-column--full">
+          <PatientSearch
+            v-model="patientQuery"
+            :results="patientResults"
+            :selected-patient-name="form.patientName || null"
+            :loading="patientLoading"
+            @select="selectPatient"
+          />
+        </div>
 
-    <main class="main-panel">
-      <AppHeader title="New Consultation" subtitle="Document a clinic visit and diagnosis details." />
-
-      <div class="page-content">
-        <form class="card form-card" @submit.prevent="submitConsultation">
-          <div class="form-grid">
-            <div class="field-column field-column--full">
-              <PatientSearch
-                v-model="patientQuery"
-                :results="patientResults"
-                :selected-patient-name="form.patientName || null"
-                :loading="patientLoading"
-                @select="selectPatient"
-              />
-            </div>
-
-            <div class="field-column">
-              <div class="field-group">
-                <label for="consultation-date">Consultation date</label>
-                <input id="consultation-date" v-model="form.consultationDate" class="form-control" type="date" />
-              </div>
-            </div>
-
-            <div class="field-column">
-              <div class="field-group">
-                <label for="status">Status</label>
-                <select id="status" v-model="form.status" class="form-control">
-                  <option value="completed">Completed</option>
-                  <option value="draft">Draft</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="field-column field-column--full">
-              <DiagnosisSearch
-                v-model="diagnosisQuery"
-                :results="diagnosisResults"
-                :selected-codes="form.diagnosisCodes"
-                :loading="diagnosisLoading"
-                @select="selectDiagnosis"
-                @remove="removeDiagnosis"
-              />
-            </div>
-
-            <div class="field-column field-column--full">
-              <div class="field-group">
-                <label for="primary-code">Primary diagnosis</label>
-                <select id="primary-code" v-model="form.primaryCode" class="form-control" :disabled="!form.diagnosisCodes.length">
-                  <option v-for="code in form.diagnosisCodes" :key="code" :value="code">
-                    {{ code }}
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <div class="field-column field-column--full">
-              <div class="field-group">
-                <label for="treatment-notes">Treatment notes</label>
-                <textarea id="treatment-notes" v-model="form.treatmentNotes" class="form-control form-control--textarea" rows="7" placeholder="Enter assessment, treatment plan, medications and follow-up guidance." />
-              </div>
-            </div>
+        <div class="field-column">
+          <div class="field-group">
+            <label for="consultation-date">Consultation date</label>
+            <input id="consultation-date" v-model="form.consultationDate" class="form-control" type="date" />
           </div>
+        </div>
 
-          <div v-if="submitError" class="form-message form-message--error">{{ submitError }}</div>
-
-          <div class="form-actions">
-            <NuxtLink to="/consultations" class="secondary-button">Cancel</NuxtLink>
-            <button class="primary-button" type="submit" :disabled="submitting">
-              {{ submitting ? 'Saving…' : 'Save consultation' }}
-            </button>
+        <div class="field-column">
+          <div class="field-group">
+            <label for="status">Status</label>
+            <select id="status" v-model="form.status" class="form-control">
+              <option value="completed">Completed</option>
+              <option value="draft">Draft</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
           </div>
-        </form>
+        </div>
+
+        <div class="field-column field-column--full">
+          <DiagnosisSearch
+            v-model="diagnosisQuery"
+            :results="diagnosisResults"
+            :selected-codes="form.diagnosisCodes"
+            :loading="diagnosisLoading"
+            @select="selectDiagnosis"
+            @remove="removeDiagnosis"
+          />
+        </div>
+
+        <div class="field-column field-column--full">
+          <div class="field-group">
+            <label for="primary-code">Primary diagnosis</label>
+            <select id="primary-code" v-model="form.primaryCode" class="form-control" :disabled="!form.diagnosisCodes.length">
+              <option v-for="code in form.diagnosisCodes" :key="code" :value="code">
+                {{ code }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-column field-column--full">
+          <div class="field-group">
+            <label for="treatment-notes">Treatment notes</label>
+            <textarea id="treatment-notes" v-model="form.treatmentNotes" class="form-control form-control--textarea" rows="7" placeholder="Enter assessment, treatment plan, medications and follow-up guidance." />
+          </div>
+        </div>
       </div>
-    </main>
+
+      <div v-if="submitError" class="form-message form-message--error">{{ submitError }}</div>
+
+      <div class="form-actions">
+        <NuxtLink to="/consultations" class="secondary-button">Cancel</NuxtLink>
+        <button class="primary-button" type="submit" :disabled="submitting">
+          {{ submitting ? 'Saving…' : 'Save consultation' }}
+        </button>
+      </div>
+    </form>
   </div>
 </template>

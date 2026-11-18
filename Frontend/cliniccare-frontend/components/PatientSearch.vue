@@ -33,6 +33,7 @@ const formatDob = (value?: string | null) => {
       v-model="searchText"
       class="form-control"
       type="text"
+      maxlength="100"
       placeholder="Search patient by name"
     />
 
