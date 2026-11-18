@@ -36,7 +36,7 @@ class ConsultationService:
         return self.consultation_repository.find_by_id(db, cid)
 
     def list(self, db, filters, limit: int, offset: int):
-        # The filter builder keeps this endpoint readable while still supporting combined patient, doctor, diagnosis, and free-text search.
+        # Build each SQL filter together with its bound parameter so filters remain safe and aligned with the query.
         where, params = [], []
         if filters.get("patient_id") is not None:
             where.append("c.patient_id = ?")

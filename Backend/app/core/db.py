@@ -46,6 +46,7 @@ def init_db() -> None:
     conn = connect()
     try:
         if needs_creation:
+            # Initialize the schema first because seed data depends on existing tables and foreign-key targets.
             conn.executescript(SCHEMA.read_text(encoding="utf-8"))
             for seed_path in (SEED_DIAGNOSIS, SEED):
                 if seed_path.exists():

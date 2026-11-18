@@ -4,6 +4,7 @@ from app.core.db import new_uuid
 
 
 class ConsultationRepository:
+    # Build the shared consultation response by joining patient and doctor names to the consultation record.
     BASE_SQL = """
         SELECT c.id, c.consultation_date, c.treatment_notes, c.status,
                p.id AS patient_id, p.full_name AS patient_name,
@@ -19,7 +20,7 @@ class ConsultationRepository:
         if not consultation_ids:
             return by_id
 
-        # Batch-load all diagnoses for the current page so one consultation page does not trigger a per-row N+1 query.
+        # Load diagnoses for all consultation IDs in one query to avoid one database query per result row.
         marks = ",".join("?" * len(consultation_ids))
         for r in db.execute(
             f"""
