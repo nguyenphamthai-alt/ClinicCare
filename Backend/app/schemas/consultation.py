@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -20,6 +21,18 @@ class ConsultationCreate(BaseModel):
     diagnosis_codes: list[str] = Field(min_length=1, max_length=20)
     primary_code: Optional[str] = None
     status: Literal["draft", "completed", "cancelled"] = "completed"
+    consultation_date: Optional[str] = None
+
+    @field_validator("consultation_date")
+    @classmethod
+    def validate_consultation_date(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        try:
+            parsed = date.fromisoformat(value.strip())
+        except (AttributeError, ValueError):
+            raise ValueError("consultation_date must be a valid date in YYYY-MM-DD format")
+        return parsed.isoformat()
 
     @field_validator("patient_id")
     @classmethod

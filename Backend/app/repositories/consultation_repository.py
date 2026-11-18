@@ -53,12 +53,18 @@ class ConsultationRepository:
         diagnoses_by_id = self._fetch_diagnoses_by_consultation(db, consultation_ids)
         return [{**dict(r), "diagnoses": diagnoses_by_id.get(r["id"], [])} for r in rows]
 
-    def create(self, db, patient_id, doctor_id, treatment_notes, status, diagnosis_codes, primary_code):
+    def create(self, db, patient_id, doctor_id, treatment_notes, status, diagnosis_codes, primary_code, consultation_date=None):
         cid = new_uuid()
-        db.execute(
-            "INSERT INTO consultations (id, patient_id, doctor_id, treatment_notes, status) VALUES (?,?,?,?,?)",
-            (cid, patient_id, doctor_id, treatment_notes, status),
-        )
+        if consultation_date:
+            db.execute(
+                "INSERT INTO consultations (id, patient_id, doctor_id, consultation_date, treatment_notes, status) VALUES (?,?,?,?,?,?)",
+                (cid, patient_id, doctor_id, consultation_date, treatment_notes, status),
+            )
+        else:
+            db.execute(
+                "INSERT INTO consultations (id, patient_id, doctor_id, treatment_notes, status) VALUES (?,?,?,?,?)",
+                (cid, patient_id, doctor_id, treatment_notes, status),
+            )
         db.executemany(
             "INSERT INTO consultation_diagnoses (id, consultation_id, diagnosis_code, is_primary) VALUES (?,?,?,?)",
             [(new_uuid(), cid, c, int(c == primary_code)) for c in diagnosis_codes],

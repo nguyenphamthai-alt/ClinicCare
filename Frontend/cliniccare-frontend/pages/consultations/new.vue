@@ -111,6 +111,7 @@ const submitConsultation = async () => {
   try {
     await api.post('/consultation', {
       patient_id: form.patientId,
+      consultation_date: form.consultationDate,
       treatment_notes: form.treatmentNotes.trim(),
       diagnosis_codes: form.diagnosisCodes,
       primary_code: form.primaryCode || form.diagnosisCodes[0],

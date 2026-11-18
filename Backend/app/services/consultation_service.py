@@ -28,6 +28,7 @@ class ConsultationService:
                 body.status,
                 codes,
                 body.primary_code,
+                body.consultation_date,
             )
         except sqlite3.Error:
             db.rollback()

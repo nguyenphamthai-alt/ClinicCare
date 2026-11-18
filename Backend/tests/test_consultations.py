@@ -103,3 +103,29 @@ def test_consultation_create_requires_authentication(client):
 
     assert response.status_code == 401
     assert response.json()["detail"] == "Not authenticated"
+
+
+def test_create_consultation_with_selected_historical_date(authenticated_client, consultation_payload):
+    consultation_payload["consultation_date"] = "2024-02-29"
+
+    response = authenticated_client.post("/consultation", json=consultation_payload)
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["consultation_date"] == "2024-02-29"
+
+    db_path = Path(os.environ["CLINICCARE_DB_PATH"])
+    with sqlite3.connect(db_path) as conn:
+        saved_date = conn.execute(
+            "SELECT consultation_date FROM consultations WHERE id = ?",
+            (payload["id"],),
+        ).fetchone()[0]
+    assert saved_date == "2024-02-29"
+
+
+def test_create_consultation_rejects_invalid_date(authenticated_client, consultation_payload):
+    consultation_payload["consultation_date"] = "2024-02-30"
+
+    response = authenticated_client.post("/consultation", json=consultation_payload)
+
+    assert response.status_code == 422
