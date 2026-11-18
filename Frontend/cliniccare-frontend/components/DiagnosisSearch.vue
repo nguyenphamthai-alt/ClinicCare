@@ -5,6 +5,7 @@ const props = defineProps<{
   modelValue: string
   results: DiagnosisItem[]
   selectedCodes: string[]
+  selectedDescriptions?: Record<string, string>
   loading: boolean
   searchError?: string | null
   maxSelections?: number
@@ -165,7 +166,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPoin
         class="tag"
         @click="$emit('remove', code)"
       >
-        {{ code }}
+        {{ code }}<template v-if="props.selectedDescriptions?.[code]"> - {{ props.selectedDescriptions[code] }}</template>
         <span>×</span>
       </button>
     </div>

@@ -18,6 +18,13 @@ const props = defineProps<{
 
     <div v-else class="table-wrap">
       <table class="data-table">
+        <colgroup>
+          <col class="consultation-col-patient" />
+          <col class="consultation-col-date" />
+          <col class="consultation-col-diagnosis" />
+          <col class="consultation-col-notes" />
+          <col class="consultation-col-status" />
+        </colgroup>
         <thead>
           <tr>
             <th>Patient</th>
@@ -38,8 +45,14 @@ const props = defineProps<{
             <td>{{ formatDate(consultation.consultation_date) }}</td>
             <td>
               <div class="code-stack">
-                <span v-for="diagnosis in consultation.diagnoses" :key="`${consultation.id}-${diagnosis.code}`" class="diagnosis-code">
-                  {{ diagnosis.code }}
+                <span
+                  v-for="diagnosis in consultation.diagnoses"
+                  :key="`${consultation.id}-${diagnosis.code}`"
+                  class="diagnosis-code consultation-diagnosis-code"
+                  :title="`${diagnosis.code} - ${diagnosis.description}`"
+                >
+                  <strong>{{ diagnosis.code }}</strong>
+                  <span class="consultation-diagnosis-description">- {{ diagnosis.description }}</span>
                 </span>
               </div>
             </td>

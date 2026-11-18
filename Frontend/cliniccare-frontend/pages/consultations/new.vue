@@ -25,6 +25,7 @@ const patientQuery = ref('')
 const patientResults = ref<Patient[]>([])
 const diagnosisQuery = ref('')
 const diagnosisResults = ref<DiagnosisItem[]>([])
+const diagnosisDescriptions = ref<Record<string, string>>({})
 const patientLoading = ref(false)
 const patientSearchError = ref<string | null>(null)
 const patientSearchComplete = ref(false)
@@ -125,6 +126,7 @@ const selectDiagnosis = (item: DiagnosisItem) => {
   }
 
   form.diagnosisCodes.push(item.code)
+  diagnosisDescriptions.value[item.code] = item.description
   form.primaryCode = form.primaryCode || item.code
   diagnosisQuery.value = ''
   diagnosisResults.value = []
@@ -140,6 +142,7 @@ onBeforeUnmount(() => {
 
 const removeDiagnosis = (code: string) => {
   form.diagnosisCodes = form.diagnosisCodes.filter((item) => item !== code)
+  delete diagnosisDescriptions.value[code]
 
   if (form.primaryCode === code) {
     form.primaryCode = form.diagnosisCodes[0] ?? ''
@@ -267,6 +270,7 @@ const loadDiagnosisSuggestions = async () => {
             v-model="diagnosisQuery"
             :results="diagnosisResults"
             :selected-codes="form.diagnosisCodes"
+            :selected-descriptions="diagnosisDescriptions"
             :loading="diagnosisLoading"
             :search-error="diagnosisSearchError"
             :max-selections="MAX_DIAGNOSES"
@@ -281,7 +285,7 @@ const loadDiagnosisSuggestions = async () => {
             <label for="primary-code">Primary diagnosis</label>
             <select id="primary-code" v-model="form.primaryCode" class="form-control" :disabled="!form.diagnosisCodes.length">
               <option v-for="code in form.diagnosisCodes" :key="code" :value="code">
-                {{ code }}
+                {{ code }}<template v-if="diagnosisDescriptions[code]"> - {{ diagnosisDescriptions[code] }}</template>
               </option>
             </select>
           </div>
