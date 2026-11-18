@@ -16,9 +16,23 @@ const getErrorMessage = (payload: unknown, fallback: string) => {
   return fallback
 }
 
+const getBaseURL = (configuredBaseURL: string | undefined) => {
+  const baseURL = configuredBaseURL ?? 'http://localhost:8000'
+  if (typeof window === 'undefined') return baseURL
+
+  const url = new URL(baseURL)
+  const loopbackHosts = new Set(['localhost', '127.0.0.1', '[::1]'])
+
+  if (loopbackHosts.has(url.hostname) && loopbackHosts.has(window.location.hostname)) {
+    url.hostname = window.location.hostname
+  }
+
+  return url.toString().replace(/\/$/, '')
+}
+
 export const useApi = () => {
   const runtimeConfig = useRuntimeConfig()
-  const baseURL = (runtimeConfig.public.apiBase as string | undefined) ?? 'http://localhost:8000'
+  const baseURL = getBaseURL(runtimeConfig.public.apiBase as string | undefined)
 
   const refreshSession = async () => {
     const response = await fetch(`${baseURL}/auth/refresh`, {
