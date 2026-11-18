@@ -9,7 +9,7 @@ from app.schemas.validators import validate_uuid4
 class ConsultationCreate(BaseModel):
     patient_id: str
     treatment_notes: str = Field(min_length=1, max_length=5000)
-    diagnosis_codes: list[str] = Field(min_length=1, max_length=20)
+    diagnosis_codes: list[str] = Field(min_length=1, max_length=10)
     primary_code: Optional[str] = None
     status: Literal["draft", "completed", "cancelled"] = "completed"
     consultation_date: Optional[str] = None
@@ -40,7 +40,9 @@ class ConsultationCreate(BaseModel):
 
     @model_validator(mode="after")
     def check_codes(self):
-        codes = list(dict.fromkeys(c.strip().upper() for c in self.diagnosis_codes))
+        codes = [c.strip().upper() for c in self.diagnosis_codes]
+        if len(codes) != len(set(codes)):
+            raise ValueError("diagnosis_codes must not contain duplicates")
         self.diagnosis_codes = codes
         if self.primary_code is None:
             self.primary_code = codes[0]

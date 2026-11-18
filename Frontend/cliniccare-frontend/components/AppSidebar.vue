@@ -5,7 +5,7 @@ const { logout, fullName } = useAuth()
 const navigation = [
   { label: 'Consultations', to: '/consultations', icon: '🗂️' },
   { label: 'New Consultation', to: '/consultations/new', icon: '➕' },
-  { label: 'Search', to: '/search', icon: '🔎' }
+  { label: 'Diagnosis Search', to: '/search', icon: '🔎' }
 ]
 
 const isActive = (path: string) => route.path === path || (path !== '/consultations' && route.path.startsWith(path))

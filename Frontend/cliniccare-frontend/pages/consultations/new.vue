@@ -9,6 +9,7 @@ definePageMeta({
 })
 
 const api = useApi()
+const MAX_DIAGNOSES = 10
 
 const form = reactive<ConsultationFormState>({
   patientId: '',
@@ -26,7 +27,9 @@ const diagnosisQuery = ref('')
 const diagnosisResults = ref<DiagnosisItem[]>([])
 const patientLoading = ref(false)
 const patientSearchError = ref<string | null>(null)
+const patientSearchComplete = ref(false)
 const diagnosisLoading = ref(false)
+const diagnosisSearchError = ref<string | null>(null)
 const submitError = ref('')
 const submitting = ref(false)
 let patientTimer: ReturnType<typeof setTimeout> | undefined
@@ -38,7 +41,12 @@ watch(patientQuery, (value) => {
   const request = ++patientRequest
   if (patientTimer) clearTimeout(patientTimer)
   const term = value.trim()
-  if (!term || term.length > 100 || (form.patientId && value === form.patientName)) {
+  if (form.patientId && value !== form.patientName) {
+    form.patientId = ''
+    form.patientName = ''
+  }
+  patientSearchComplete.value = false
+  if (term.length > 100 || (form.patientId && value === form.patientName)) {
     patientResults.value = []
     patientLoading.value = false
     patientSearchError.value = null
@@ -50,7 +58,7 @@ watch(patientQuery, (value) => {
   patientSearchError.value = null
   patientTimer = setTimeout(async () => {
     try {
-      const results = await api.get<Patient[]>('/patients', { search: term, limit: 8 })
+      const results = await api.get<Patient[]>('/patients', { search: term || undefined, limit: 8 })
       if (request === patientRequest) patientResults.value = results
     } catch (error) {
       if (request === patientRequest) {
@@ -58,16 +66,20 @@ watch(patientQuery, (value) => {
         patientSearchError.value = error instanceof Error ? error.message : 'Unable to search patients.'
       }
     } finally {
-      if (request === patientRequest) patientLoading.value = false
+      if (request === patientRequest) {
+        patientLoading.value = false
+        patientSearchComplete.value = !patientSearchError.value
+      }
     }
-  }, 300)
+  }, 250)
 }, { flush: 'sync' })
 
 watch(diagnosisQuery, (value) => {
   const request = ++diagnosisRequest
   if (diagnosisTimer) clearTimeout(diagnosisTimer)
   const term = value.trim()
-  if (!term || term.length > 100) {
+  diagnosisSearchError.value = null
+  if (term.length > 100) {
     diagnosisResults.value = []
     diagnosisLoading.value = false
     return
@@ -77,17 +89,17 @@ watch(diagnosisQuery, (value) => {
   diagnosisLoading.value = true
   diagnosisTimer = setTimeout(async () => {
     try {
-      const results = await api.get<DiagnosisItem[]>('/diagnosis', { search: term, limit: 10 })
+      const results = await api.get<DiagnosisItem[]>('/diagnosis', { search: term || undefined, limit: 10 })
       if (request === diagnosisRequest) diagnosisResults.value = results
     } catch (error) {
       if (request === diagnosisRequest) {
         diagnosisResults.value = []
-        console.error(error)
+        diagnosisSearchError.value = error instanceof Error ? error.message : 'Unable to search diagnosis codes.'
       }
     } finally {
       if (request === diagnosisRequest) diagnosisLoading.value = false
     }
-  }, 300)
+  }, 250)
 }, { flush: 'sync' })
 
 const selectPatient = (patient: Patient) => {
@@ -95,6 +107,7 @@ const selectPatient = (patient: Patient) => {
   if (patientTimer) clearTimeout(patientTimer)
   patientLoading.value = false
   patientSearchError.value = null
+  patientSearchComplete.value = true
   form.patientId = patient.id
   form.patientName = patient.full_name
   patientQuery.value = patient.full_name
@@ -105,13 +118,17 @@ const selectDiagnosis = (item: DiagnosisItem) => {
   diagnosisRequest += 1
   if (diagnosisTimer) clearTimeout(diagnosisTimer)
   diagnosisLoading.value = false
-  if (!form.diagnosisCodes.includes(item.code)) {
-    form.diagnosisCodes.push(item.code)
+  if (form.diagnosisCodes.includes(item.code)) return
+  if (form.diagnosisCodes.length >= MAX_DIAGNOSES) {
+    submitError.value = `A consultation can include at most ${MAX_DIAGNOSES} diagnoses.`
+    return
   }
 
+  form.diagnosisCodes.push(item.code)
   form.primaryCode = form.primaryCode || item.code
   diagnosisQuery.value = ''
   diagnosisResults.value = []
+  submitError.value = ''
 }
 
 onBeforeUnmount(() => {
@@ -166,6 +183,48 @@ const submitConsultation = async () => {
     submitting.value = false
   }
 }
+
+const loadPatientSuggestions = async () => {
+  if (patientLoading.value || patientResults.value.length || (form.patientId && patientQuery.value === form.patientName)) return
+  const request = ++patientRequest
+  if (patientTimer) clearTimeout(patientTimer)
+  patientLoading.value = true
+  patientSearchError.value = null
+  patientSearchComplete.value = false
+  try {
+    const results = await api.get<Patient[]>('/patients', { search: patientQuery.value.trim() || undefined, limit: 8 })
+    if (request === patientRequest) patientResults.value = results
+  } catch (error) {
+    if (request === patientRequest) {
+      patientResults.value = []
+      patientSearchError.value = error instanceof Error ? error.message : 'Unable to load patients.'
+    }
+  } finally {
+    if (request === patientRequest) {
+      patientLoading.value = false
+      patientSearchComplete.value = !patientSearchError.value
+    }
+  }
+}
+
+const loadDiagnosisSuggestions = async () => {
+  if (diagnosisLoading.value || diagnosisResults.value.length) return
+  const request = ++diagnosisRequest
+  if (diagnosisTimer) clearTimeout(diagnosisTimer)
+  diagnosisLoading.value = true
+  diagnosisSearchError.value = null
+  try {
+    const results = await api.get<DiagnosisItem[]>('/diagnosis', { search: diagnosisQuery.value.trim() || undefined, limit: 10 })
+    if (request === diagnosisRequest) diagnosisResults.value = results
+  } catch (error) {
+    if (request === diagnosisRequest) {
+      diagnosisResults.value = []
+      diagnosisSearchError.value = error instanceof Error ? error.message : 'Unable to load diagnosis codes.'
+    }
+  } finally {
+    if (request === diagnosisRequest) diagnosisLoading.value = false
+  }
+}
 </script>
 
 <template>
@@ -179,6 +238,8 @@ const submitConsultation = async () => {
             :selected-patient-name="form.patientName || null"
             :loading="patientLoading"
             :search-error="patientSearchError"
+            :search-complete="patientSearchComplete"
+            @focus="loadPatientSuggestions"
             @select="selectPatient"
           />
         </div>
@@ -207,6 +268,9 @@ const submitConsultation = async () => {
             :results="diagnosisResults"
             :selected-codes="form.diagnosisCodes"
             :loading="diagnosisLoading"
+            :search-error="diagnosisSearchError"
+            :max-selections="MAX_DIAGNOSES"
+            @focus="loadDiagnosisSuggestions"
             @select="selectDiagnosis"
             @remove="removeDiagnosis"
           />

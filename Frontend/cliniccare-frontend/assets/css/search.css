@@ -1,11 +1,21 @@
 .search-page {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.2rem;
+  display: block;
+  width: 100%;
 }
 
 .search-card {
+  width: 100%;
   padding: 1.25rem;
+}
+
+.search-card .table-wrap,
+.search-card .data-table {
+  width: 100%;
+}
+
+.search-card .data-table th:first-child,
+.search-card .data-table td:first-child {
+  width: 9rem;
 }
 
 .section-header {

@@ -38,10 +38,9 @@ const props = defineProps<{
             <td>{{ formatDate(consultation.consultation_date) }}</td>
             <td>
               <div class="code-stack">
-                <span v-for="diagnosis in consultation.diagnoses.slice(0, 2)" :key="`${consultation.id}-${diagnosis.code}`" class="diagnosis-code">
+                <span v-for="diagnosis in consultation.diagnoses" :key="`${consultation.id}-${diagnosis.code}`" class="diagnosis-code">
                   {{ diagnosis.code }}
                 </span>
-                <span v-if="consultation.diagnoses.length > 2" class="more-codes">+{{ consultation.diagnoses.length - 2 }}</span>
               </div>
             </td>
             <td class="notes-cell">{{ consultation.treatment_notes }}</td>

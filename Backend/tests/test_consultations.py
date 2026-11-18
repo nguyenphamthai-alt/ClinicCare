@@ -129,3 +129,36 @@ def test_create_consultation_rejects_invalid_date(authenticated_client, consulta
     response = authenticated_client.post("/consultation", json=consultation_payload)
 
     assert response.status_code == 422
+
+
+def test_create_consultation_rejects_more_than_ten_diagnoses(authenticated_client, consultation_payload):
+    consultation_payload["diagnosis_codes"] = [
+        "A00.0", "A00.1", "A00.9", "A01.00", "A01.01",
+        "A01.02", "A01.03", "A01.04", "A01.05", "A01.09", "A01.1",
+    ]
+
+    response = authenticated_client.post("/consultation", json=consultation_payload)
+
+    assert response.status_code == 422
+
+
+def test_create_consultation_rejects_duplicate_diagnoses(authenticated_client, consultation_payload):
+    consultation_payload["diagnosis_codes"] = ["A00.0", "a00.0"]
+
+    response = authenticated_client.post("/consultation", json=consultation_payload)
+
+    assert response.status_code == 422
+    assert "must not contain duplicates" in response.text
+
+
+def test_create_consultation_accepts_ten_diagnoses(authenticated_client, consultation_payload):
+    consultation_payload["diagnosis_codes"] = [
+        "A00.0", "A00.1", "A00.9", "A01.00", "A01.01",
+        "A01.02", "A01.03", "A01.04", "A01.05", "A01.09",
+    ]
+
+    response = authenticated_client.post("/consultation", json=consultation_payload)
+
+    assert response.status_code == 201
+    assert len(response.json()["diagnoses"]) == 10
+    assert response.json()["diagnoses"][0]["code"] == "A00.0"

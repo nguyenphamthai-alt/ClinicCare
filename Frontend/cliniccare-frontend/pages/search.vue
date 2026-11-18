@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import type { Consultation, DiagnosisItem } from '~/types'
-import { formatDate } from '~/utils/date'
+import type { DiagnosisItem } from '~/types'
 
 definePageMeta({
   middleware: 'auth',
   layout: 'app',
-  title: 'Search',
-  subtitle: 'Locate diagnoses and consultation history quickly.'
+  title: 'Diagnosis Search',
+  subtitle: 'Look up ICD-10 diagnosis codes and descriptions.'
 })
 
 const api = useApi()
@@ -99,7 +98,6 @@ const createPagedSearch = <T>(path: string, maxLength: number, failureMessage: s
 }
 
 const diagnosis = createPagedSearch<DiagnosisItem>('/diagnosis', 100, 'Diagnosis search failed.')
-const consultation = createPagedSearch<Consultation>('/consultation', 200, 'Consultation search failed.')
 const {
   query: diagnosisQuery,
   results: diagnosisResults,
@@ -110,30 +108,17 @@ const {
   ready: diagnosisReady,
   loadPage: loadDiagnosisPage
 } = diagnosis
-const {
-  query: consultationQuery,
-  results: consultationResults,
-  loading: consultationLoading,
-  error: consultationError,
-  page: consultationPage,
-  hasMore: consultationHasMore,
-  ready: consultationReady,
-  loadPage: loadConsultationPage
-} = consultation
 
 onMounted(() => {
   loadDiagnosisPage(1)
-  loadConsultationPage(1)
 })
 
 onBeforeUnmount(() => {
   diagnosis.stop()
-  consultation.stop()
 })
 
 const pageLabel = (count: number) => count ? `Showing ${count} items` : 'No records'
 const diagnosisPageLabel = computed(() => pageLabel(diagnosisResults.value.length))
-const consultationPageLabel = computed(() => pageLabel(consultationResults.value.length))
 </script>
 
 <template>
@@ -178,58 +163,6 @@ const consultationPageLabel = computed(() => pageLabel(consultationResults.value
       </div>
 
       <div v-else-if="diagnosisReady && !diagnosisResults.length" class="state-panel state-panel--compact">No diagnosis results found.</div>
-    </section>
-
-    <section class="card search-card">
-      <div class="section-header">
-        <h2>Consultation Search</h2>
-      </div>
-
-      <div class="field-group">
-        <label for="consultation-search-page">Patient or diagnosis</label>
-        <input id="consultation-search-page" v-model="consultationQuery" class="form-control" type="search" maxlength="200" placeholder="Search patient name or diagnosis code" />
-      </div>
-
-      <div class="results-toolbar" v-if="consultationResults.length || consultationQuery.trim()">
-        <span>{{ consultationPageLabel }}</span>
-        <div class="page-actions">
-          <button class="page-button" type="button" :disabled="consultationPage === 1 || consultationLoading" @click="loadConsultationPage(Math.max(1, consultationPage - 1))">Prev</button>
-          <span class="page-number">Page {{ consultationPage }}</span>
-          <button class="page-button" type="button" :disabled="!consultationHasMore || consultationLoading" @click="loadConsultationPage(consultationPage + 1)">Next</button>
-        </div>
-      </div>
-
-      <div v-if="consultationLoading" class="state-panel state-panel--compact">Loading all consultation records…</div>
-      <div v-else-if="consultationError" class="state-panel state-panel--compact state-panel--error">{{ consultationError }}</div>
-
-      <div v-else-if="consultationResults.length" class="table-wrap">
-        <table class="data-table data-table--compact">
-          <thead>
-            <tr>
-              <th>Patient</th>
-              <th>Date</th>
-              <th>Diagnosis</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="consultation in consultationResults" :key="consultation.id">
-              <td>{{ consultation.patient_name }}</td>
-              <td>{{ formatDate(consultation.consultation_date) }}</td>
-              <td>
-                <div class="code-stack">
-                  <span v-for="diagnosis in consultation.diagnoses.slice(0, 2)" :key="`${consultation.id}-${diagnosis.code}`" class="diagnosis-code">
-                    {{ diagnosis.code }}
-                  </span>
-                </div>
-              </td>
-              <td class="notes-cell">{{ consultation.treatment_notes }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div v-else-if="consultationReady && !consultationResults.length" class="state-panel state-panel--compact">No consultation results found.</div>
     </section>
   </div>
 </template>
