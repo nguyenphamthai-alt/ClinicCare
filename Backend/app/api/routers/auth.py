@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.core.db import get_db
 from app.core.security import current_doctor, set_auth_cookies
-from app.schemas.auth import AuthOut, LoginIn, RefreshIn
+from app.schemas.auth import AuthOut, LoginIn
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -22,8 +22,8 @@ def me(doctor=Depends(current_doctor)):
 
 
 @router.post("/refresh", response_model=AuthOut)
-def refresh(request: Request, response: Response, body: RefreshIn | None = None, db=Depends(get_db)):
-    refresh_token = body.refresh_token if body and body.refresh_token else request.cookies.get("cliniccare_refresh_token")
+def refresh(request: Request, response: Response, db=Depends(get_db)):
+    refresh_token = request.cookies.get("cliniccare_refresh_token")
     if not refresh_token:
         raise HTTPException(status_code=401, detail="Refresh token not provided")
     payload = service.refresh(db, refresh_token)

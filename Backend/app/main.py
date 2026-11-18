@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Reinitialize the local SQLite database on startup so the demo app always starts from a known state.
+    # Initialize a missing SQLite database while preserving existing data.
     init_db()
     yield
 

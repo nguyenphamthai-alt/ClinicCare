@@ -93,9 +93,7 @@ class ConsultationRepository:
         if not rows:
             return []
 
-        consultation_ids = [r["id"] for r in rows]
-        diagnoses_by_id = self._fetch_diagnoses_by_consultation(db, consultation_ids)
-        return [{**dict(r), "diagnoses": diagnoses_by_id.get(r["id"], [])} for r in rows]
+        return self.with_diagnoses(db, rows)
 
     def create(self, db, patient_id, doctor_id, treatment_notes, status, diagnosis_codes, primary_code, consultation_date=None):
         cid = new_uuid()
