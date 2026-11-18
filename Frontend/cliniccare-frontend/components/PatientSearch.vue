@@ -37,15 +37,21 @@ const selectCreatedPatient = (patient: Patient) => {
 <template>
   <div class="field-group">
     <label for="patient-search">Patient</label>
-    <input
-      id="patient-search"
-      v-model="searchText"
-      class="form-control"
-      type="text"
-      autocomplete="off"
-      maxlength="100"
-      placeholder="Search patient by name"
-    />
+    <div class="patient-search-row">
+      <input
+        id="patient-search"
+        v-model="searchText"
+        class="form-control"
+        type="text"
+        autocomplete="off"
+        maxlength="100"
+        placeholder="Search patient by name"
+      />
+      <button class="secondary-button patient-add-new-button" type="button" @click="showQuickForm = true">
+        <span aria-hidden="true">＋</span>
+        Add new patient
+      </button>
+    </div>
 
     <div v-if="props.selectedPatientName" class="selected-patient">Selected patient: <strong>{{ props.selectedPatientName }}</strong></div>
     <div v-else-if="props.loading" class="helper-text">Searching patients…</div>
@@ -53,7 +59,6 @@ const selectCreatedPatient = (patient: Patient) => {
     <div v-else-if="noResults" class="patient-no-results-group">
       <div v-if="!showQuickForm" class="patient-no-results">
         <span>No patient found.</span>
-        <button class="patient-add-button" type="button" @click="showQuickForm = true">Add "{{ props.modelValue.trim() }}"</button>
       </div>
 
       <PatientQuickForm
@@ -63,6 +68,13 @@ const selectCreatedPatient = (patient: Patient) => {
         @cancel="showQuickForm = false"
       />
     </div>
+
+    <PatientQuickForm
+      v-if="showQuickForm && !noResults"
+      :initial-name="props.modelValue.trim()"
+      @created="selectCreatedPatient"
+      @cancel="showQuickForm = false"
+    />
 
     <ul v-if="props.results.length && props.modelValue.trim()" class="search-results">
       <li
@@ -82,6 +94,28 @@ const selectCreatedPatient = (patient: Patient) => {
 </template>
 
 <style scoped>
+.patient-search-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.patient-search-row .form-control {
+  min-width: 0;
+  flex: 1;
+}
+
+.patient-add-new-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.65rem 0.9rem;
+  white-space: nowrap;
+  font-size: 0.86rem;
+}
+
 .patient-no-results {
   display: flex;
   align-items: center;
@@ -96,18 +130,14 @@ const selectCreatedPatient = (patient: Patient) => {
   gap: 12px;
 }
 
-.patient-add-button {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--primary);
-  font: inherit;
-  font-weight: 600;
-}
+@media (max-width: 640px) {
+  .patient-search-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
 
-.patient-add-button:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+  .patient-add-new-button {
+    width: 100%;
+  }
 }
-
 </style>
