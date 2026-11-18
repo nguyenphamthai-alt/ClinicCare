@@ -8,8 +8,6 @@ const props = defineProps<{
   error: string | null
 }>()
 
-const formatCodes = (consultation: Consultation) =>
-  consultation.diagnoses.map((diagnosis) => diagnosis.code).join(', ') || '—'
 </script>
 
 <template>

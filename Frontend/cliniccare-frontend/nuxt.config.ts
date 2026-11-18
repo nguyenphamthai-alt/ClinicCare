@@ -4,7 +4,6 @@ export default defineNuxtConfig({
   css: [
     '~/assets/css/base.css',
     '~/assets/css/layout.css',
-    '~/assets/css/header.css',
     '~/assets/css/components.css',
     '~/assets/css/forms.css',
     '~/assets/css/search.css',

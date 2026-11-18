@@ -1,6 +1,21 @@
 import { useRuntimeConfig } from '#imports'
 import type { AuthResponse } from '~/types'
 
+const getErrorMessage = (payload: unknown, fallback: string) => {
+  if (typeof payload === 'string' && payload) return payload
+  if (typeof payload !== 'object' || payload === null || !('detail' in payload)) return fallback
+
+  const detail = payload.detail
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) {
+    return detail.map((item) => {
+      if (typeof item === 'object' && item !== null && 'msg' in item) return String(item.msg)
+      return String(item)
+    }).join('; ')
+  }
+  return fallback
+}
+
 export const useApi = () => {
   const runtimeConfig = useRuntimeConfig()
   const baseURL = (runtimeConfig.public.apiBase as string | undefined) ?? 'http://localhost:8000'
@@ -18,13 +33,7 @@ export const useApi = () => {
     const payload = contentType.includes('application/json') ? await response.json() : await response.text()
 
     if (!response.ok) {
-      const message =
-        typeof payload === 'object' && payload !== null && 'detail' in payload
-          ? String(payload.detail)
-          : typeof payload === 'string' && payload
-            ? payload
-            : 'Session expired. Please log in again.'
-      throw new Error(message)
+      throw new Error(getErrorMessage(payload, 'Session expired. Please log in again.'))
     }
 
     return payload as AuthResponse
@@ -47,25 +56,15 @@ export const useApi = () => {
     })
 
     if (response.status === 401 && retry && path !== '/auth/login' && path !== '/auth/refresh' && path !== '/auth/me') {
-      try {
-        await refreshSession()
-        return request<T>(path, options, false)
-      } catch (error) {
-        throw error
-      }
+      await refreshSession()
+      return request<T>(path, options, false)
     }
 
     const contentType = response.headers.get('content-type') || ''
     const payload = contentType.includes('application/json') ? await response.json() : await response.text()
 
     if (!response.ok) {
-      const message =
-        typeof payload === 'object' && payload !== null && 'detail' in payload
-          ? String(payload.detail)
-          : typeof payload === 'string' && payload
-            ? payload
-            : 'Request failed'
-      throw new Error(message)
+      throw new Error(getErrorMessage(payload, 'Request failed'))
     }
 
     return (payload ?? null) as T

@@ -95,29 +95,4 @@ onBeforeUnmount(() => {
   align-items: center;
   margin: 12px 0 16px;
 }
-
-.page-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.page-button {
-  border: 1px solid #cfd8dc;
-  background: #fff;
-  color: #1f2937;
-  border-radius: 8px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-.page-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.page-number {
-  font-weight: 600;
-  color: #1f2937;
-}
 </style>

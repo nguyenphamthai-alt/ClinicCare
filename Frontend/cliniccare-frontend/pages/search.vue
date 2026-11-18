@@ -10,210 +10,130 @@ definePageMeta({
 })
 
 const api = useApi()
+const PAGE_SIZE = 10
+const DEBOUNCE_MS = 300
 
-const diagnosisQuery = ref('')
-const diagnosisResults = ref<DiagnosisItem[]>([])
-const diagnosisLoading = ref(false)
-const diagnosisError = ref<string | null>(null)
-const diagnosisPage = ref(1)
-const diagnosisPageSize = 10
-const diagnosisHasMore = ref(true)
-const diagnosisReady = ref(false)
-const initialDiagnosisResults = ref<DiagnosisItem[]>([])
-const initialDiagnosisHasMore = ref(false)
-const initialDiagnosisReady = ref(false)
-let diagnosisTimer: ReturnType<typeof setTimeout> | undefined
-let diagnosisRequest = 0
+const createPagedSearch = <T>(path: string, maxLength: number, failureMessage: string) => {
+  const query = ref('')
+  const results = ref<T[]>([])
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+  const page = ref(1)
+  const hasMore = ref(true)
+  const ready = ref(false)
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let request = 0
 
-const consultationQuery = ref('')
-const consultationResults = ref<Consultation[]>([])
-const consultationLoading = ref(false)
-const consultationError = ref<string | null>(null)
-const consultationPage = ref(1)
-const consultationPageSize = 10
-const consultationHasMore = ref(true)
-const consultationReady = ref(false)
-const initialConsultationResults = ref<Consultation[]>([])
-const initialConsultationHasMore = ref(false)
-const initialConsultationReady = ref(false)
-let consultationTimer: ReturnType<typeof setTimeout> | undefined
-let consultationRequest = 0
+  const loadPage = async (requestedPage: number) => {
+    if (timer) clearTimeout(timer)
+    const currentRequest = ++request
+    const term = query.value.trim()
+    loading.value = true
+    error.value = null
+    ready.value = false
 
-const fetchDiagnosisResults = async (search: string, page: number, request: number) => {
-  const term = search.trim()
-  diagnosisLoading.value = true
-  diagnosisError.value = null
-  diagnosisReady.value = false
+    try {
+      let rows = await api.get<T[]>(path, {
+        search: term || undefined,
+        limit: PAGE_SIZE + 1,
+        offset: (requestedPage - 1) * PAGE_SIZE
+      })
 
-  try {
-    const rows = await api.get<DiagnosisItem[]>('/diagnosis', {
-      search: term,
-      limit: diagnosisPageSize + 1,
-      offset: (page - 1) * diagnosisPageSize
-    })
+      if (currentRequest !== request) return
+      let resolvedPage = requestedPage
+      let fellBack = false
+      if (!rows.length && requestedPage > 1) {
+        fellBack = true
+        resolvedPage -= 1
+        rows = await api.get<T[]>(path, {
+          search: term || undefined,
+          limit: PAGE_SIZE + 1,
+          offset: (resolvedPage - 1) * PAGE_SIZE
+        })
+        if (currentRequest !== request) return
+      }
 
-    if (request !== diagnosisRequest) return
-    const hasMore = rows.length > diagnosisPageSize
-    diagnosisResults.value = hasMore ? rows.slice(0, diagnosisPageSize) : rows
-    diagnosisHasMore.value = hasMore
-    if (!term && page === 1) {
-      initialDiagnosisResults.value = diagnosisResults.value
-      initialDiagnosisHasMore.value = hasMore
-      initialDiagnosisReady.value = true
+      hasMore.value = !fellBack && rows.length > PAGE_SIZE
+      results.value = rows.slice(0, PAGE_SIZE)
+      page.value = resolvedPage
+      ready.value = true
+    } catch (cause) {
+      if (currentRequest !== request) return
+      error.value = cause instanceof Error ? cause.message : failureMessage
+      results.value = []
+      hasMore.value = false
+      ready.value = true
+    } finally {
+      if (currentRequest === request) loading.value = false
     }
+  }
 
-    if (!diagnosisResults.value.length && page > 1) {
-      diagnosisPage.value = Math.max(1, page - 1)
+  watch(query, (value) => {
+    ++request
+    if (timer) clearTimeout(timer)
+    page.value = 1
+    error.value = null
+    const term = value.trim()
+
+    if (term.length > maxLength) {
+      results.value = []
+      loading.value = false
+      ready.value = true
+      hasMore.value = false
+      error.value = `Search must be ${maxLength} characters or fewer.`
       return
     }
 
-    diagnosisPage.value = page
-    diagnosisReady.value = true
-  } catch (error) {
-    if (request !== diagnosisRequest) return
-    diagnosisError.value = error instanceof Error ? error.message : 'Diagnosis search failed.'
-    diagnosisResults.value = []
-    diagnosisHasMore.value = false
-    diagnosisReady.value = true
-  } finally {
-    if (request === diagnosisRequest) diagnosisLoading.value = false
+    results.value = []
+    loading.value = true
+    ready.value = false
+    timer = setTimeout(() => loadPage(1), DEBOUNCE_MS)
+  }, { flush: 'sync' })
+
+  const stop = () => {
+    request += 1
+    if (timer) clearTimeout(timer)
   }
+
+  return { query, results, loading, error, page, hasMore, ready, loadPage, stop }
 }
 
-const fetchConsultationResults = async (search: string, page: number, request: number) => {
-  const term = search.trim()
-  consultationLoading.value = true
-  consultationError.value = null
-  consultationReady.value = false
+const diagnosis = createPagedSearch<DiagnosisItem>('/diagnosis', 100, 'Diagnosis search failed.')
+const consultation = createPagedSearch<Consultation>('/consultation', 200, 'Consultation search failed.')
+const {
+  query: diagnosisQuery,
+  results: diagnosisResults,
+  loading: diagnosisLoading,
+  error: diagnosisError,
+  page: diagnosisPage,
+  hasMore: diagnosisHasMore,
+  ready: diagnosisReady,
+  loadPage: loadDiagnosisPage
+} = diagnosis
+const {
+  query: consultationQuery,
+  results: consultationResults,
+  loading: consultationLoading,
+  error: consultationError,
+  page: consultationPage,
+  hasMore: consultationHasMore,
+  ready: consultationReady,
+  loadPage: loadConsultationPage
+} = consultation
 
-  try {
-    const rows = await api.get<Consultation[]>('/consultation', {
-      search: term || undefined,
-      limit: consultationPageSize + 1,
-      offset: (page - 1) * consultationPageSize
-    })
-
-    if (request !== consultationRequest) return
-    const hasMore = rows.length > consultationPageSize
-    consultationResults.value = hasMore ? rows.slice(0, consultationPageSize) : rows
-    consultationHasMore.value = hasMore
-    if (!term && page === 1) {
-      initialConsultationResults.value = consultationResults.value
-      initialConsultationHasMore.value = hasMore
-      initialConsultationReady.value = true
-    }
-
-    if (!consultationResults.value.length && page > 1) {
-      consultationPage.value = Math.max(1, page - 1)
-      return
-    }
-
-    consultationPage.value = page
-    consultationReady.value = true
-  } catch (error) {
-    if (request !== consultationRequest) return
-    consultationError.value = error instanceof Error ? error.message : 'Consultation search failed.'
-    consultationResults.value = []
-    consultationHasMore.value = false
-    consultationReady.value = true
-  } finally {
-    if (request === consultationRequest) consultationLoading.value = false
-  }
-}
-
-const loadDiagnosisPage = (page: number) => {
-  if (diagnosisTimer) clearTimeout(diagnosisTimer)
-  const request = ++diagnosisRequest
-  return fetchDiagnosisResults(diagnosisQuery.value, page, request)
-}
-
-const loadConsultationPage = (page: number) => {
-  if (consultationTimer) clearTimeout(consultationTimer)
-  const request = ++consultationRequest
-  return fetchConsultationResults(consultationQuery.value, page, request)
-}
-
-watch(diagnosisQuery, (value) => {
-  const request = ++diagnosisRequest
-  if (diagnosisTimer) clearTimeout(diagnosisTimer)
-  diagnosisPage.value = 1
-  diagnosisError.value = null
-  const term = value.trim()
-  if (!term) {
-    if (initialDiagnosisReady.value) {
-      diagnosisResults.value = initialDiagnosisResults.value
-      diagnosisHasMore.value = initialDiagnosisHasMore.value
-      diagnosisReady.value = true
-      diagnosisLoading.value = false
-    } else {
-      diagnosisTimer = setTimeout(() => fetchDiagnosisResults('', 1, request), 300)
-    }
-    return
-  }
-  if (term.length > 100) {
-    diagnosisResults.value = []
-    diagnosisLoading.value = false
-    diagnosisReady.value = true
-    diagnosisError.value = 'Search must be 100 characters or fewer.'
-    return
-  }
-  diagnosisResults.value = []
-  diagnosisLoading.value = true
-  diagnosisReady.value = false
-  diagnosisTimer = setTimeout(() => fetchDiagnosisResults(value, 1, request), 300)
-}, { flush: 'sync' })
-
-watch(consultationQuery, (value) => {
-  const request = ++consultationRequest
-  if (consultationTimer) clearTimeout(consultationTimer)
-  consultationPage.value = 1
-  consultationError.value = null
-  const term = value.trim()
-  if (!term) {
-    if (initialConsultationReady.value) {
-      consultationResults.value = initialConsultationResults.value
-      consultationHasMore.value = initialConsultationHasMore.value
-      consultationReady.value = true
-      consultationLoading.value = false
-    } else {
-      consultationTimer = setTimeout(() => fetchConsultationResults('', 1, request), 300)
-    }
-    return
-  }
-  if (term.length > 200) {
-    consultationResults.value = []
-    consultationLoading.value = false
-    consultationReady.value = true
-    consultationError.value = 'Search must be 200 characters or fewer.'
-    return
-  }
-  consultationResults.value = []
-  consultationLoading.value = true
-  consultationReady.value = false
-  consultationTimer = setTimeout(() => fetchConsultationResults(value, 1, request), 300)
-}, { flush: 'sync' })
-
-onMounted(async () => {
-  await loadDiagnosisPage(1)
-  await loadConsultationPage(1)
+onMounted(() => {
+  loadDiagnosisPage(1)
+  loadConsultationPage(1)
 })
 
 onBeforeUnmount(() => {
-  diagnosisRequest += 1
-  consultationRequest += 1
-  if (diagnosisTimer) clearTimeout(diagnosisTimer)
-  if (consultationTimer) clearTimeout(consultationTimer)
+  diagnosis.stop()
+  consultation.stop()
 })
 
-const diagnosisPageLabel = computed(() => {
-  if (!diagnosisResults.value.length) return 'No records'
-  return `Showing ${diagnosisResults.value.length} items`
-})
-
-const consultationPageLabel = computed(() => {
-  if (!consultationResults.value.length) return 'No records'
-  return `Showing ${consultationResults.value.length} items`
-})
+const pageLabel = (count: number) => count ? `Showing ${count} items` : 'No records'
+const diagnosisPageLabel = computed(() => pageLabel(diagnosisResults.value.length))
+const consultationPageLabel = computed(() => pageLabel(consultationResults.value.length))
 </script>
 
 <template>
@@ -313,40 +233,3 @@ const consultationPageLabel = computed(() => {
     </section>
   </div>
 </template>
-
-<style scoped>
-.results-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin: 12px 0 16px;
-  color: #4b5563;
-  font-size: 0.9rem;
-}
-
-.page-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.page-button {
-  border: 1px solid #cfd8dc;
-  background: #fff;
-  color: #1f2937;
-  border-radius: 8px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-.page-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.page-number {
-  font-weight: 600;
-  color: #1f2937;
-}
-</style>

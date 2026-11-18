@@ -15,10 +15,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo(isAuthenticated.value ? '/consultations' : '/login')
   }
 
-  if (!isAuthenticated.value && to.path !== '/login') {
-    return navigateTo('/login')
-  }
-
   if (isAuthenticated.value && to.path === '/login') {
     return navigateTo('/consultations')
   }

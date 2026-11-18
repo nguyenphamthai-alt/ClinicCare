@@ -1,6 +1,4 @@
 <script setup lang="ts">
-const { username } = useAuth()
-
 defineProps<{ title: string; subtitle?: string }>()
 </script>
 
