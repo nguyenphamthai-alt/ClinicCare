@@ -1,4 +1,5 @@
 import { useRuntimeConfig } from '#imports'
+import type { AuthResponse } from '~/types'
 
 export const useApi = () => {
   const runtimeConfig = useRuntimeConfig()
@@ -26,7 +27,7 @@ export const useApi = () => {
       throw new Error(message)
     }
 
-    return payload as { access_token: string; refresh_token: string; token_type?: string; full_name?: string | null }
+    return payload as AuthResponse
   }
 
   const request = async <T>(path: string, options: RequestInit & { params?: Record<string, any> } = {}, retry = true): Promise<T> => {

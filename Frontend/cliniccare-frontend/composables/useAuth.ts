@@ -1,5 +1,5 @@
 import { computed, navigateTo } from '#imports'
-import type { TokenResponse } from '~/types'
+import type { AuthResponse } from '~/types'
 import { useApi } from '~/composables/useApi'
 
 export const useAuth = () => {
@@ -16,7 +16,7 @@ export const useAuth = () => {
     session.value = { isAuthenticated: false, fullName: null }
   }
 
-  const storeSession = (payload: TokenResponse, doctorUsername?: string, doctorFullName?: string | null) => {
+  const storeSession = (payload: AuthResponse, doctorUsername?: string, doctorFullName?: string | null) => {
     session.value = {
       isAuthenticated: true,
       fullName: doctorFullName ?? payload.full_name ?? doctorUsername ?? 'Doctor'
@@ -44,7 +44,7 @@ export const useAuth = () => {
   }
 
   const login = async (credentials: { username: string; password: string }) => {
-    const payload = await api.post<TokenResponse>('/auth/login', credentials)
+    const payload = await api.post<AuthResponse>('/auth/login', credentials)
     storeSession(payload, credentials.username, payload.full_name ?? undefined)
     return payload
   }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const route = useRoute()
-const { logout, fullName, username } = useAuth()
+const { logout, fullName } = useAuth()
 
 const navigation = [
   { label: 'Consultations', to: '/consultations', icon: '🗂️' },
@@ -8,7 +8,7 @@ const navigation = [
   { label: 'Search', to: '/search', icon: '🔎' }
 ]
 
-const isActive = (path: string) => route.path === path || (path !== '/consultations' && route.path.startsWith(path)) || (path === '/consultations' && route.path.startsWith('/consultations'))
+const isActive = (path: string) => route.path === path || (path !== '/consultations' && route.path.startsWith(path))
 </script>
 
 <template>
@@ -36,7 +36,7 @@ const isActive = (path: string) => route.path === path || (path !== '/consultati
     <div class="sidebar-footer">
       <div class="doctor-pill">
         <span class="doctor-pill__label">Doctor</span>
-        <strong>{{ fullName || username || 'Doctor' }}</strong>
+        <strong>{{ fullName || 'Doctor' }}</strong>
       </div>
       <button class="logout-button" type="button" @click="logout">Logout</button>
     </div>

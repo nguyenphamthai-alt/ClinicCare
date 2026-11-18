@@ -6,8 +6,9 @@ def test_login_with_valid_credentials(client):
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["token_type"] == "bearer"
     assert payload["full_name"] == "Dr. Nguyen Minh"
+    assert "access_token" not in payload
+    assert "refresh_token" not in payload
     assert response.cookies.get("cliniccare_access_token")
     assert response.cookies.get("cliniccare_refresh_token")
 
@@ -49,22 +50,16 @@ def test_protected_endpoint_accepts_valid_authentication(authenticated_client):
 
 
 def test_refresh_with_valid_refresh_token(authenticated_client):
-    login_response = authenticated_client.post(
-        "/auth/login",
-        json={"username": "doctor01", "password": "@Admin123"},
-    )
-    refresh_token = login_response.json()["refresh_token"]
+    original_refresh_token = authenticated_client.cookies.get("cliniccare_refresh_token")
 
-    response = authenticated_client.post(
-        "/auth/refresh",
-        json={"refresh_token": refresh_token},
-    )
+    response = authenticated_client.post("/auth/refresh")
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["token_type"] == "bearer"
     assert payload["full_name"] == "Dr. Nguyen Minh"
-    assert payload["refresh_token"] != refresh_token
+    assert "access_token" not in payload
+    assert "refresh_token" not in payload
+    assert authenticated_client.cookies.get("cliniccare_refresh_token") != original_refresh_token
     assert authenticated_client.cookies.get("cliniccare_refresh_token")
 
 
@@ -79,11 +74,11 @@ def test_refresh_with_invalid_refresh_token(client):
 
 
 def test_logout_invalidates_refresh_session(client):
-    login_response = client.post(
+    client.post(
         "/auth/login",
         json={"username": "doctor01", "password": "@Admin123"},
     )
-    refresh_token = login_response.json()["refresh_token"]
+    refresh_token = client.cookies.get("cliniccare_refresh_token")
 
     logout_response = client.post("/auth/logout")
 
@@ -93,9 +88,6 @@ def test_logout_invalidates_refresh_session(client):
     assert "cliniccare_refresh_token=\"\"" in set_cookie_value
     assert "Max-Age=0" in set_cookie_value
 
-    refresh_response = client.post(
-        "/auth/refresh",
-        json={"refresh_token": refresh_token},
-    )
+    refresh_response = client.post("/auth/refresh", json={"refresh_token": refresh_token})
     assert refresh_response.status_code == 401
     assert refresh_response.json()["detail"] == "Invalid refresh token"

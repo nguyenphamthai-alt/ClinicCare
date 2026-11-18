@@ -10,8 +10,5 @@ class RefreshIn(BaseModel):
     refresh_token: str | None = Field(default=None, min_length=1)
 
 
-class TokenOut(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
+class AuthOut(BaseModel):
     full_name: str | None = None
