@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Consultation } from '~/types'
-import { formatDateTime } from '~/utils/date'
+import { formatDate } from '~/utils/date'
 
 const props = defineProps<{
   consultations: Consultation[]
@@ -35,7 +35,7 @@ const props = defineProps<{
                 <small>{{ consultation.doctor_name }}</small>
               </div>
             </td>
-            <td>{{ formatDateTime(consultation.consultation_date) }}</td>
+            <td>{{ formatDate(consultation.consultation_date) }}</td>
             <td>
               <div class="code-stack">
                 <span v-for="diagnosis in consultation.diagnoses.slice(0, 2)" :key="`${consultation.id}-${diagnosis.code}`" class="diagnosis-code">

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.core.db import get_db
 from app.core.security import current_doctor
-from app.schemas.patient import PatientOut
+from app.schemas.patient import PatientCreate, PatientOut
 from app.services.patient_service import PatientService
 
 router = APIRouter(tags=["patients"])
@@ -17,4 +17,13 @@ def search_patients(
     _=Depends(current_doctor),
 ):
     return service.search(db, search, limit)
+
+
+@router.post("/patients", response_model=PatientOut, status_code=201)
+def create_patient(
+    body: PatientCreate,
+    db=Depends(get_db),
+    _=Depends(current_doctor),
+):
+    return service.create(db, body)
 

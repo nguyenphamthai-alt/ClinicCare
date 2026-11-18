@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Consultation, DiagnosisItem } from '~/types'
-import { formatDateTime } from '~/utils/date'
+import { formatDate } from '~/utils/date'
 
 definePageMeta({
   middleware: 'auth',
@@ -215,7 +215,7 @@ const consultationPageLabel = computed(() => pageLabel(consultationResults.value
           <tbody>
             <tr v-for="consultation in consultationResults" :key="consultation.id">
               <td>{{ consultation.patient_name }}</td>
-              <td>{{ formatDateTime(consultation.consultation_date) }}</td>
+              <td>{{ formatDate(consultation.consultation_date) }}</td>
               <td>
                 <div class="code-stack">
                   <span v-for="diagnosis in consultation.diagnoses.slice(0, 2)" :key="`${consultation.id}-${diagnosis.code}`" class="diagnosis-code">
