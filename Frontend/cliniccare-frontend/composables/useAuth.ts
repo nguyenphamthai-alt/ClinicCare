@@ -4,22 +4,25 @@ import { useApi } from '~/composables/useApi'
 
 export const useAuth = () => {
   const api = useApi()
-  const session = useState<{ isAuthenticated: boolean; fullName: string | null }>('cliniccare-session', () => ({
+  const session = useState<{ isAuthenticated: boolean; fullName: string | null; initialized: boolean }>('cliniccare-session', () => ({
     isAuthenticated: false,
-    fullName: null
+    fullName: null,
+    initialized: false
   }))
 
   const isAuthenticated = computed(() => session.value.isAuthenticated)
   const fullName = computed(() => session.value.fullName)
+  const initialized = computed(() => session.value.initialized)
 
   const clearSession = () => {
-    session.value = { isAuthenticated: false, fullName: null }
+    session.value = { isAuthenticated: false, fullName: null, initialized: true }
   }
 
   const storeSession = (payload: AuthResponse, doctorUsername?: string, doctorFullName?: string | null) => {
     session.value = {
       isAuthenticated: true,
-      fullName: doctorFullName ?? payload.full_name ?? doctorUsername ?? 'Doctor'
+      fullName: doctorFullName ?? payload.full_name ?? doctorUsername ?? 'Doctor',
+      initialized: true
     }
   }
 
@@ -28,7 +31,8 @@ export const useAuth = () => {
       const profile = await api.get<{ id: string; username: string; full_name?: string | null }>('/auth/me')
       session.value = {
         isAuthenticated: true,
-        fullName: profile.full_name ?? profile.username ?? 'Doctor'
+        fullName: profile.full_name ?? profile.username ?? 'Doctor',
+        initialized: true
       }
       return true
     } catch (error) {
@@ -63,6 +67,7 @@ export const useAuth = () => {
   return {
     fullName,
     isAuthenticated,
+    initialized,
     hydrateSession,
     login,
     logout,

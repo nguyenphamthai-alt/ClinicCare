@@ -10,7 +10,7 @@ ClinicCare Mini EMR is a small clinic management application for doctors to sear
 ## Features
 
 - Authentication and doctor login
-- Patient search for consultation selection
+- Patient search and inline patient creation during consultation entry
 - ICD-10 diagnosis lookup by code or description
 - Consultation creation and listing
 - Search across consultation records by patient, diagnosis, or note content
@@ -101,6 +101,7 @@ The application uses the following environment values.
 |---|---|---|---|
 | `SECRET_KEY` | Yes | Signing key for JWT tokens | `change-me` |
 | `CLINICCARE_DB_PATH` | No | Override the SQLite database file location | `/tmp/cliniccare.db` |
+| `NUXT_PUBLIC_API_BASE` | No | Backend URL used by the frontend | `http://localhost:8000` |
 
 The backend example file is at `Backend/.env.example`.
 
@@ -110,7 +111,7 @@ The backend exposes the following routes.
 
 ### Authentication
 
-- `POST /auth/login` — doctor login with username/password; returns tokens and sets secure HttpOnly cookies.
+- `POST /auth/login` — doctor login with username/password; returns the doctor name and sets HttpOnly access/refresh cookies. Tokens are not exposed in the response body.
 - `POST /auth/refresh` — refresh the active session using the refresh cookie.
 - `POST /auth/logout` — clears the current auth cookies and invalidates the refresh token.
 - `GET /auth/me` — returns the current logged-in doctor profile when a valid session is present.
@@ -148,7 +149,7 @@ The diagnosis seed file contains 100 ICD-10 records and is loaded during initial
 
 ## Authentication and demo account
 
-The backend uses JWT authentication with HttpOnly cookies for session handling. The browser cannot read the auth tokens directly from JavaScript, so the frontend relies on `fetch(..., { credentials: 'include' })` and server-side cookie management.
+The backend uses JWT authentication with HttpOnly cookies for session handling. Access and refresh tokens are not exposed to JavaScript or stored in browser storage. The frontend uses `fetch(..., { credentials: 'include' })`; when `/auth/me` reports an expired access token, the client refreshes the session once with the HttpOnly refresh cookie. Route middleware waits for this restoration before deciding whether to redirect to login, so valid sessions survive page reloads on the current route.
 
 During local validation, the seeded doctor login was verified as:
 
@@ -193,4 +194,4 @@ If the database path is invalid or the folder does not exist, ensure the directo
 
 ## Notes
 
-This project is intentionally scoped to a small clinical workflow: doctor authentication, patient lookup, diagnosis search, and consultation recording. It does not implement a full patient-creation workflow in the current version.
+This project is intentionally scoped to a small clinical workflow: doctor authentication, patient lookup and inline creation, diagnosis search, and consultation recording.

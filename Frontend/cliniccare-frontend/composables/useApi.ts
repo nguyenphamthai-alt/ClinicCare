@@ -69,7 +69,7 @@ export const useApi = () => {
       credentials: 'include'
     })
 
-    if (response.status === 401 && retry && path !== '/auth/login' && path !== '/auth/refresh' && path !== '/auth/me') {
+    if (response.status === 401 && retry && path !== '/auth/login' && path !== '/auth/refresh') {
       await refreshSession()
       return request<T>(path, options, false)
     }

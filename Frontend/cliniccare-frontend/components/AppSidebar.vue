@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const route = useRoute()
 const { logout, fullName } = useAuth()
+const clientReady = ref(false)
+onMounted(() => { clientReady.value = true })
 
 const navigation = [
   { label: 'Consultations', to: '/consultations', icon: '🗂️' },
@@ -36,7 +38,7 @@ const isActive = (path: string) => route.path === path || (path !== '/consultati
     <div class="sidebar-footer">
       <div class="doctor-pill">
         <span class="doctor-pill__label">Doctor</span>
-        <strong>{{ fullName || 'Doctor' }}</strong>
+        <strong>{{ clientReady && fullName ? fullName : 'Doctor' }}</strong>
       </div>
       <button class="logout-button" type="button" @click="logout">Logout</button>
     </div>

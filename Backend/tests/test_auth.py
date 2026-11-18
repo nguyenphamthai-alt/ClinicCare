@@ -131,3 +131,21 @@ def test_logout_invalidates_refresh_session(client):
     refresh_response = client.post("/auth/refresh")
     assert refresh_response.status_code == 401
     assert refresh_response.json()["detail"] == "Invalid refresh token"
+
+
+def test_expired_access_cookie_can_restore_session_with_refresh(authenticated_client):
+    authenticated_client.cookies.delete("cliniccare_access_token")
+
+    refresh_response = authenticated_client.post("/auth/refresh")
+    assert refresh_response.status_code == 200
+
+    me_response = authenticated_client.get("/auth/me")
+    assert me_response.status_code == 200
+    assert me_response.json()["username"] == "doctor01"
+
+
+def test_invalid_refresh_session_cannot_restore_profile(client):
+    client.cookies.set("cliniccare_refresh_token", "not-a-valid-refresh-token")
+
+    assert client.post("/auth/refresh").status_code == 401
+    assert client.get("/auth/me").status_code == 401

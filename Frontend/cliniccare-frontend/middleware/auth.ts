@@ -2,13 +2,13 @@ import { defineNuxtRouteMiddleware, navigateTo } from '#imports'
 import { useAuth } from '~/composables/useAuth'
 
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { isAuthenticated, hydrateSession } = useAuth()
+  const { initialized, isAuthenticated, hydrateSession } = useAuth()
 
-  if (!isAuthenticated.value && to.path !== '/login') {
+  if (import.meta.server) return
+
+  if (!initialized.value && to.path !== '/login') {
     const hasSession = await hydrateSession()
-    if (!hasSession) {
-      return navigateTo('/login')
-    }
+    if (!hasSession) return navigateTo('/login')
   }
 
   if (to.path === '/') {
