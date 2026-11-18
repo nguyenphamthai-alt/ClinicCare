@@ -28,6 +28,7 @@ const searchText = computed({
       v-model="searchText"
       class="form-control"
       type="text"
+      autocomplete="off"
       maxlength="100"
       placeholder="Search by code or description"
     />

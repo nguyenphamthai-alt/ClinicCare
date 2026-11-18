@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { Patient } from '~/types'
+import { formatDate } from '~/utils/date'
 
 const props = defineProps<{
   modelValue: string
   results: Patient[]
   selectedPatientName?: string | null
   loading: boolean
+  searchError?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -13,15 +15,22 @@ const emit = defineEmits<{
   select: [patient: Patient]
 }>()
 
+const showQuickForm = ref(false)
 const searchText = computed({
   get: () => props.modelValue,
-  set: (value: string) => emit('update:modelValue', value)
+  set: (value: string) => {
+    showQuickForm.value = false
+    emit('update:modelValue', value)
+  }
 })
 
-const formatDob = (value?: string | null) => {
-  if (!value) return 'DOB not provided'
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-GB', { dateStyle: 'medium' })
+const noResults = computed(() =>
+  !props.loading && !props.searchError && !props.selectedPatientName && props.modelValue.trim() && !props.results.length
+)
+
+const selectCreatedPatient = (patient: Patient) => {
+  showQuickForm.value = false
+  emit('select', patient)
 }
 </script>
 
@@ -33,12 +42,27 @@ const formatDob = (value?: string | null) => {
       v-model="searchText"
       class="form-control"
       type="text"
+      autocomplete="off"
       maxlength="100"
       placeholder="Search patient by name"
     />
 
     <div v-if="props.selectedPatientName" class="selected-patient">Selected patient: <strong>{{ props.selectedPatientName }}</strong></div>
     <div v-else-if="props.loading" class="helper-text">Searching patients…</div>
+    <div v-else-if="props.searchError" class="state-panel state-panel--compact state-panel--error" role="alert">{{ props.searchError }}</div>
+    <div v-else-if="noResults" class="patient-no-results-group">
+      <div v-if="!showQuickForm" class="patient-no-results">
+        <span>No patient found.</span>
+        <button class="patient-add-button" type="button" @click="showQuickForm = true">Add "{{ props.modelValue.trim() }}"</button>
+      </div>
+
+      <PatientQuickForm
+        v-if="showQuickForm"
+        :initial-name="props.modelValue.trim()"
+        @created="selectCreatedPatient"
+        @cancel="showQuickForm = false"
+      />
+    </div>
 
     <ul v-if="props.results.length && props.modelValue.trim()" class="search-results">
       <li
@@ -48,10 +72,42 @@ const formatDob = (value?: string | null) => {
         @click="$emit('select', patient)"
       >
         <div>
-          <strong>{{ patient.full_name }}</strong>
-          <small>{{ patient.sex }} • {{ formatDob(patient.date_of_birth) }}</small>
+          <strong>{{ patient.full_name }}<template v-if="patient.date_of_birth"> · {{ formatDate(patient.date_of_birth) }}</template></strong>
+          <small>{{ patient.sex }}</small>
         </div>
       </li>
     </ul>
+
   </div>
 </template>
+
+<style scoped>
+.patient-no-results {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.patient-no-results-group {
+  display: grid;
+  gap: 12px;
+}
+
+.patient-add-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 600;
+}
+
+.patient-add-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+</style>

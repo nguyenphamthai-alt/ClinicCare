@@ -21,7 +21,7 @@ class PatientOut(BaseModel):
 
 
 class PatientCreate(BaseModel):
-    full_name: str = Field(min_length=1, max_length=200)
+    full_name: str = Field(min_length=1, max_length=100)
     date_of_birth: Optional[str] = None
     sex: Literal["Male", "Female"]
     phone: Optional[str] = Field(default=None, max_length=30)
@@ -44,4 +44,6 @@ class PatientCreate(BaseModel):
             parsed = date.fromisoformat(value.strip())
         except (AttributeError, ValueError):
             raise ValueError("date_of_birth must be a valid date in YYYY-MM-DD format")
+        if parsed > date.today():
+            raise ValueError("date_of_birth must not be in the future")
         return parsed.isoformat()

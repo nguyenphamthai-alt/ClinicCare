@@ -25,6 +25,7 @@ const patientResults = ref<Patient[]>([])
 const diagnosisQuery = ref('')
 const diagnosisResults = ref<DiagnosisItem[]>([])
 const patientLoading = ref(false)
+const patientSearchError = ref<string | null>(null)
 const diagnosisLoading = ref(false)
 const submitError = ref('')
 const submitting = ref(false)
@@ -40,11 +41,13 @@ watch(patientQuery, (value) => {
   if (!term || term.length > 100 || (form.patientId && value === form.patientName)) {
     patientResults.value = []
     patientLoading.value = false
+    patientSearchError.value = null
     return
   }
 
   patientResults.value = []
   patientLoading.value = true
+  patientSearchError.value = null
   patientTimer = setTimeout(async () => {
     try {
       const results = await api.get<Patient[]>('/patients', { search: term, limit: 8 })
@@ -52,7 +55,7 @@ watch(patientQuery, (value) => {
     } catch (error) {
       if (request === patientRequest) {
         patientResults.value = []
-        console.error(error)
+        patientSearchError.value = error instanceof Error ? error.message : 'Unable to search patients.'
       }
     } finally {
       if (request === patientRequest) patientLoading.value = false
@@ -91,6 +94,7 @@ const selectPatient = (patient: Patient) => {
   patientRequest += 1
   if (patientTimer) clearTimeout(patientTimer)
   patientLoading.value = false
+  patientSearchError.value = null
   form.patientId = patient.id
   form.patientName = patient.full_name
   patientQuery.value = patient.full_name
@@ -174,6 +178,7 @@ const submitConsultation = async () => {
             :results="patientResults"
             :selected-patient-name="form.patientName || null"
             :loading="patientLoading"
+            :search-error="patientSearchError"
             @select="selectPatient"
           />
         </div>

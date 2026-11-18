@@ -46,6 +46,19 @@ def test_create_patient_rejects_invalid_date(authenticated_client):
     assert response.status_code == 422
 
 
+def test_create_patient_rejects_future_date_of_birth(authenticated_client):
+    response = authenticated_client.post(
+        "/patients",
+        json={
+            "full_name": "Future Patient",
+            "date_of_birth": "2999-01-01",
+            "sex": "Female",
+        },
+    )
+
+    assert response.status_code == 422
+
+
 def test_invalid_patient_search_parameters_return_422(authenticated_client):
     response = authenticated_client.get("/patients?limit=0")
 
