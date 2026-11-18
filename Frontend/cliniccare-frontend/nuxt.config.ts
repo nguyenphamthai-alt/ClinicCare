@@ -1,7 +1,16 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: false },
-  css: ['~/assets/css/main.css'],
+  css: [
+    '~/assets/css/base.css',
+    '~/assets/css/layout.css',
+    '~/assets/css/header.css',
+    '~/assets/css/components.css',
+    '~/assets/css/forms.css',
+    '~/assets/css/search.css',
+    '~/assets/css/auth.css',
+    '~/assets/css/responsive.css'
+  ],
   app: {
     head: {
       title: 'ClinicCare Mini EMR',

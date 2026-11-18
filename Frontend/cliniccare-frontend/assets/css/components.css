@@ -1,0 +1,208 @@
+
+.logout-button,
+.primary-button,
+.secondary-button {
+  border: none;
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.logout-button,
+.secondary-button {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.primary-button {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.primary-button:hover,
+.primary-button:focus-visible {
+  background: var(--primary-hover);
+}
+
+.secondary-button:hover,
+.logout-button:hover,
+.secondary-button:focus-visible,
+.logout-button:focus-visible {
+  background: var(--secondary);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.logout-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.primary-button--inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 1px var(--shadow);
+}
+
+.table-card {
+  overflow: hidden;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: 1rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.data-table th {
+  background: var(--surface-alt);
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.data-table tbody tr:hover {
+  background: rgba(232, 243, 243, 0.35);
+}
+
+.patient-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.patient-cell small {
+  color: var(--muted);
+}
+
+.code-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.diagnosis-code {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.5rem;
+  border-radius: 999px;
+  background: var(--secondary);
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.diagnosis-code--large {
+  font-size: 0.8rem;
+  padding: 0.3rem 0.6rem;
+}
+
+.more-codes {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.notes-cell {
+  max-width: 370px;
+  color: var(--text);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
+}
+
+.status-badge--completed {
+  background: rgba(47, 125, 109, 0.12);
+  color: var(--success);
+}
+
+.status-badge--draft {
+  background: rgba(183, 120, 45, 0.12);
+  color: var(--warning);
+}
+
+.status-badge--cancelled {
+  background: rgba(185, 82, 82, 0.12);
+  color: var(--error);
+}
+
+.state-panel {
+  padding: 1.5rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.state-panel--compact {
+  padding: 1rem;
+}
+
+.state-panel--error {
+  color: var(--error);
+}
+
+.results-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0 16px;
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.page-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-button {
+  border: 1px solid #cfd8dc;
+  background: #fff;
+  color: #1f2937;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.page-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.page-number {
+  font-weight: 600;
+  color: #1f2937;
+}
