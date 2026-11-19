@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DiagnosisItem } from '~/types'
+import { useAutocompleteDropdown } from '~/composables/useAutocompleteDropdown'
 
 const props = defineProps<{
   modelValue: string
@@ -18,85 +19,35 @@ const emit = defineEmits<{
   focus: []
 }>()
 
-const isOpen = ref(false)
-const activeIndex = ref(-1)
-const root = ref<HTMLElement | null>(null)
-const searchText = computed({
-  get: () => props.modelValue,
-  set: (value: string) => {
-    isOpen.value = true
-    activeIndex.value = -1
-    emit('update:modelValue', value)
-  }
-})
-
 const selectionLimit = computed(() => props.maxSelections ?? 10)
 const selectionLimitReached = computed(() => props.selectedCodes.length >= selectionLimit.value)
 const isSelected = (code: string) => props.selectedCodes.includes(code)
 const isSelectable = (item: DiagnosisItem) => !selectionLimitReached.value && !isSelected(item.code)
 
+const dropdown = useAutocompleteDropdown<DiagnosisItem>({
+  getItems: () => props.results,
+  isSelectable,
+  moveOnOpenArrow: true,
+  onSelect: (item) => emit('select', item),
+  onOpen: () => emit('focus')
+})
+const { isOpen, activeIndex, root, open, close, onKeydown, onFocusOut } = dropdown
+
+const searchText = computed({
+  get: () => props.modelValue,
+  set: (value: string) => {
+    open(false)
+    emit('update:modelValue', value)
+  }
+})
+
 const selectItem = (item: DiagnosisItem) => {
   if (!isSelectable(item)) return
-  isOpen.value = false
-  activeIndex.value = -1
+  close()
   emit('select', item)
 }
 
-const moveActiveIndex = (direction: 1 | -1) => {
-  const count = props.results.length
-  if (!count) return
-
-  let next = activeIndex.value
-  for (let step = 0; step < count; step += 1) {
-    next = next < 0
-      ? direction === 1 ? 0 : count - 1
-      : (next + direction + count) % count
-    if (isSelectable(props.results[next])) {
-      activeIndex.value = next
-      return
-    }
-  }
-}
-
-const openSuggestions = () => {
-  isOpen.value = true
-  activeIndex.value = -1
-  emit('focus')
-}
-
-const onKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    event.stopPropagation()
-    isOpen.value = false
-    activeIndex.value = -1
-    return
-  }
-  if (!isOpen.value && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
-    openSuggestions()
-  }
-  if (event.key === 'ArrowDown' && props.results.length) {
-    event.preventDefault()
-    moveActiveIndex(1)
-  } else if (event.key === 'ArrowUp' && props.results.length) {
-    event.preventDefault()
-    moveActiveIndex(-1)
-  } else if (event.key === 'Enter' && isOpen.value && activeIndex.value >= 0) {
-    event.preventDefault()
-    selectItem(props.results[activeIndex.value])
-  }
-}
-
-const onDocumentPointerDown = (event: PointerEvent) => {
-  if (!root.value?.contains(event.target as Node)) isOpen.value = false
-}
-
-const onFocusOut = (event: FocusEvent) => {
-  if (!root.value?.contains(event.relatedTarget as Node)) isOpen.value = false
-}
-
-onMounted(() => document.addEventListener('pointerdown', onDocumentPointerDown))
-onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPointerDown))
+const openSuggestions = () => open()
 </script>
 
 <template>

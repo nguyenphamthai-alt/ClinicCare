@@ -142,7 +142,7 @@ const diagnosisPageLabel = computed(() => pageLabel(diagnosisResults.value.lengt
         </div>
       </div>
 
-      <div v-if="diagnosisLoading" class="state-panel state-panel--compact">Loading all diagnosis records…</div>
+      <div v-if="diagnosisLoading" class="state-panel state-panel--compact">Loading diagnosis codes…</div>
       <div v-else-if="diagnosisError" class="state-panel state-panel--compact state-panel--error">{{ diagnosisError }}</div>
 
       <div v-else-if="diagnosisResults.length" class="table-wrap">

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Patient } from '~/types'
 import { formatDate } from '~/utils/date'
+import { useAutocompleteDropdown } from '~/composables/useAutocompleteDropdown'
 
 const props = defineProps<{
   modelValue: string
@@ -18,15 +19,18 @@ const emit = defineEmits<{
 }>()
 
 const showQuickForm = ref(false)
-const isOpen = ref(false)
-const activeIndex = ref(-1)
-const root = ref<HTMLElement | null>(null)
+const dropdown = useAutocompleteDropdown<Patient>({
+  getItems: () => props.results,
+  onSelect: (patient) => emit('select', patient),
+  onOpen: () => emit('focus')
+})
+const { isOpen, activeIndex, root, open, close, onKeydown, onFocusOut } = dropdown
+
 const searchText = computed({
   get: () => props.modelValue,
   set: (value: string) => {
     showQuickForm.value = false
-    isOpen.value = true
-    activeIndex.value = -1
+    open(false)
     emit('update:modelValue', value)
   }
 })
@@ -36,72 +40,28 @@ const noResults = computed(() =>
 )
 
 watch(() => props.selectedPatientName, (selectedName) => {
-  if (selectedName) {
-    isOpen.value = false
-    activeIndex.value = -1
-  }
+  if (selectedName) close()
 })
 
 const selectCreatedPatient = (patient: Patient) => {
   showQuickForm.value = false
-  isOpen.value = false
+  close()
   emit('select', patient)
 }
 
 const selectPatient = (patient: Patient) => {
-  isOpen.value = false
-  activeIndex.value = -1
+  close()
   emit('select', patient)
 }
 
 const openSuggestions = () => {
   if (props.selectedPatientName) {
-    isOpen.value = false
+    close()
     return
   }
-  isOpen.value = true
-  activeIndex.value = -1
-  emit('focus')
+  open()
 }
 
-const onKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    event.stopPropagation()
-    isOpen.value = false
-    activeIndex.value = -1
-    return
-  }
-  if (!isOpen.value && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
-    openSuggestions()
-    return
-  }
-  if (event.key === 'ArrowDown' && props.results.length) {
-    event.preventDefault()
-    activeIndex.value = (activeIndex.value + 1) % props.results.length
-  } else if (event.key === 'ArrowUp' && props.results.length) {
-    event.preventDefault()
-    activeIndex.value = activeIndex.value <= 0 ? props.results.length - 1 : activeIndex.value - 1
-  } else if (event.key === 'Enter' && isOpen.value && activeIndex.value >= 0) {
-    event.preventDefault()
-    selectPatient(props.results[activeIndex.value])
-  }
-}
-
-const onDocumentPointerDown = (event: PointerEvent) => {
-  if (!root.value?.contains(event.target as Node)) isOpen.value = false
-}
-
-const onFocusOut = (event: FocusEvent) => {
-  if (!root.value?.contains(event.relatedTarget as Node)) isOpen.value = false
-}
-
-onMounted(() => {
-  document.addEventListener('pointerdown', onDocumentPointerDown)
-})
-onBeforeUnmount(() => {
-  document.removeEventListener('pointerdown', onDocumentPointerDown)
-})
 </script>
 
 <template>
