@@ -5,7 +5,7 @@ definePageMeta({
   middleware: 'auth',
   layout: 'app',
   title: 'Consultations',
-  subtitle: 'Review completed and pending patient visits.'
+  subtitle: 'Review patient visits and clinical records.'
 })
 
 const api = useApi()

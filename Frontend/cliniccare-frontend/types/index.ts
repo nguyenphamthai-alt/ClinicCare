@@ -21,7 +21,6 @@ export interface Consultation {
   id: string
   consultation_date: string
   treatment_notes: string
-  status: string
   patient_id: string
   patient_name: string
   doctor_name: string
@@ -35,5 +34,4 @@ export interface ConsultationFormState {
   diagnosisCodes: string[]
   primaryCode: string
   treatmentNotes: string
-  status: 'draft' | 'completed' | 'cancelled'
 }

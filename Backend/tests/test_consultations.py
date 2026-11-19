@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import uuid
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -15,8 +16,7 @@ def consultation_payload():
         "patient_id": PATIENT_ID,
         "treatment_notes": "Patient reports fever and mild cough after travel.",
         "diagnosis_codes": ["A00.0", "A00.1"],
-        "primary_code": "A00.0",
-        "status": "completed",
+        "primary_code": "A00.0"
     }
 
 
@@ -26,9 +26,9 @@ def test_create_consultation_successfully(authenticated_client, consultation_pay
     assert response.status_code == 201
     payload = response.json()
     assert payload["patient_id"] == PATIENT_ID
-    assert payload["status"] == "completed"
+    assert "status" not in payload
     assert payload["treatment_notes"] == consultation_payload["treatment_notes"]
-    assert any(d["code"] == "A00.0" and d["is_primary"] for d in payload["diagnoses"])
+    assert payload["consultation_date"] == date.today().isoformat()
 
     db_path = Path(os.environ["CLINICCARE_DB_PATH"])
 
@@ -121,6 +121,25 @@ def test_create_consultation_with_selected_historical_date(authenticated_client,
             (payload["id"],),
         ).fetchone()[0]
     assert saved_date == "2024-02-29"
+
+
+def test_create_consultation_accepts_tomorrow_with_tolerance(authenticated_client, consultation_payload):
+    tomorrow = (date.today() + timedelta(days=1)).isoformat()
+    consultation_payload["consultation_date"] = tomorrow
+
+    response = authenticated_client.post("/consultation", json=consultation_payload)
+
+    assert response.status_code == 201
+    assert response.json()["consultation_date"] == tomorrow
+
+
+def test_create_consultation_rejects_future_date(authenticated_client, consultation_payload):
+    consultation_payload["consultation_date"] = (date.today() + timedelta(days=2)).isoformat()
+
+    response = authenticated_client.post("/consultation", json=consultation_payload)
+
+    assert response.status_code == 422
+    assert "later than tomorrow" in response.text
 
 
 def test_create_consultation_rejects_invalid_date(authenticated_client, consultation_payload):

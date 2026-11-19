@@ -54,13 +54,8 @@ CREATE TABLE IF NOT EXISTS consultations (
     id TEXT PRIMARY KEY,
     patient_id TEXT NOT NULL,
     doctor_id TEXT NOT NULL,
-    consultation_date TEXT DEFAULT CURRENT_TIMESTAMP,
+    consultation_date TEXT DEFAULT (date('now')),
     treatment_notes TEXT NOT NULL,
-
-    status TEXT NOT NULL DEFAULT 'completed'
-        CHECK (
-            status IN ('draft', 'completed', 'cancelled')
-        ),
 
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,

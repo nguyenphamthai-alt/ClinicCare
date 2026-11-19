@@ -104,49 +104,43 @@ INSERT INTO consultations (
     patient_id,
     doctor_id,
     consultation_date,
-    treatment_notes,
-    status
+    treatment_notes
 )
 VALUES
 (
     'f2d8a7e6-3b29-4be4-9d18-8d2c4fe6912c',
     '271ae31d-1a31-4dfa-9d3a-8d3e2e46b101',
     '6b7b736a-15d0-4ea4-a223-6d05d1a1a8ee',
-    '2026-11-17 09:00:00',
-    'Patient has fever, cough and sore throat.',
-    'completed'
+    '2026-11-17',
+    'Patient has fever, cough and sore throat.'
 ),
 (
     '0cf5cebe-c1be-4f14-9c9f-93d7572bf328',
     '271ae31d-1a31-4dfa-9d3a-8d3e2e46b101',
     '6b7b736a-15d0-4ea4-a223-6d05d1a1a8ee',
-    '2026-11-17 10:30:00',
-    'Patient reports headache and dizziness.',
-    'completed'
+    '2026-11-17',
+    'Patient reports headache and dizziness.'
 ),
 (
     '9bc0d67d-7d20-4424-b527-4ec0fa46d2c8',
     '3a4d0f58-df0e-4c4e-8f4a-7f713b5a1a22',
     'a6c0d9b1-3d9d-4b8a-b0a3-16f8d68d0b21',
-    '2026-11-17 11:00:00',
-    'Follow-up examination for hypertension.',
-    'draft'
+    '2026-11-17',
+    'Follow-up examination for hypertension.'
 ),
 (
     'd5c6dd0a-05bc-41dc-8d42-8e6d808f7d44',
     '7ef4f0b1-9a5c-4ece-8d9f-63fa9cce2cac',
     'f2823f2b-d94c-4fd8-9c92-f70f16e1a2dd',
-    '2026-11-17 13:00:00',
-    'Patient reports symptoms of acid reflux.',
-    'completed'
+    '2026-11-17',
+    'Patient reports symptoms of acid reflux.'
 ),
 (
     'c9a2d7eb-c4d9-4c91-b9dc-d57dcdb17640',
     'de5297e5-0d57-49b2-8c1e-8d0c7f6adfa8',
     'a6c0d9b1-3d9d-4b8a-b0a3-16f8d68d0b21',
-    '2026-11-17 14:30:00',
-    'Patient reports lower back pain.',
-    'draft'
+    '2026-11-17',
+    'Patient reports lower back pain.'
 )
 ON CONFLICT(id) DO NOTHING;
 

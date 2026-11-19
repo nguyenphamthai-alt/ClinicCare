@@ -6,7 +6,7 @@ from app.core.db import new_uuid
 class ConsultationRepository:
     # Build the shared consultation response by joining patient and doctor names to the consultation record.
     BASE_SQL = """
-        SELECT c.id, c.consultation_date, c.treatment_notes, c.status,
+        SELECT c.id, substr(c.consultation_date, 1, 10) AS consultation_date, c.treatment_notes,
                p.id AS patient_id, p.full_name AS patient_name,
                d.full_name AS doctor_name
         FROM consultations c
@@ -86,7 +86,7 @@ class ConsultationRepository:
         sql = self.BASE_SQL
         if where:
             sql += " WHERE " + " AND ".join(where)
-        sql += " ORDER BY c.consultation_date DESC, c.id DESC LIMIT ? OFFSET ?"
+        sql += " ORDER BY substr(c.consultation_date, 1, 10) DESC, c.id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
 
         rows = db.execute(sql, params).fetchall()
@@ -95,18 +95,12 @@ class ConsultationRepository:
 
         return self.with_diagnoses(db, rows)
 
-    def create(self, db, patient_id, doctor_id, treatment_notes, status, diagnosis_codes, primary_code, consultation_date=None):
+    def create(self, db, patient_id, doctor_id, treatment_notes, diagnosis_codes, primary_code, consultation_date):
         cid = new_uuid()
-        if consultation_date:
-            db.execute(
-                "INSERT INTO consultations (id, patient_id, doctor_id, consultation_date, treatment_notes, status) VALUES (?,?,?,?,?,?)",
-                (cid, patient_id, doctor_id, consultation_date, treatment_notes, status),
-            )
-        else:
-            db.execute(
-                "INSERT INTO consultations (id, patient_id, doctor_id, treatment_notes, status) VALUES (?,?,?,?,?)",
-                (cid, patient_id, doctor_id, treatment_notes, status),
-            )
+        db.execute(
+            "INSERT INTO consultations (id, patient_id, doctor_id, consultation_date, treatment_notes) VALUES (?,?,?,?,?)",
+            (cid, patient_id, doctor_id, consultation_date, treatment_notes),
+        )
         db.executemany(
             "INSERT INTO consultation_diagnoses (id, consultation_id, diagnosis_code, is_primary) VALUES (?,?,?,?)",
             [(new_uuid(), cid, c, int(c == primary_code)) for c in diagnosis_codes],

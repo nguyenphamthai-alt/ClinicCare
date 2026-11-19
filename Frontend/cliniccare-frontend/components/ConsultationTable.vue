@@ -23,7 +23,6 @@ const props = defineProps<{
           <col class="consultation-col-date" />
           <col class="consultation-col-diagnosis" />
           <col class="consultation-col-notes" />
-          <col class="consultation-col-status" />
         </colgroup>
         <thead>
           <tr>
@@ -31,7 +30,6 @@ const props = defineProps<{
             <th>Date</th>
             <th>Diagnosis</th>
             <th>Treatment notes</th>
-            <th>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -57,9 +55,6 @@ const props = defineProps<{
               </div>
             </td>
             <td class="notes-cell">{{ consultation.treatment_notes }}</td>
-            <td>
-              <span :class="['status-badge', `status-badge--${consultation.status}`]">{{ consultation.status }}</span>
-            </td>
           </tr>
         </tbody>
       </table>

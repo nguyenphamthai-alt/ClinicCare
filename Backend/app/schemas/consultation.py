@@ -1,5 +1,5 @@
-from datetime import date
-from typing import Literal, Optional
+from datetime import date, datetime, timedelta, timezone
+from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -11,19 +11,16 @@ class ConsultationCreate(BaseModel):
     treatment_notes: str = Field(min_length=1, max_length=5000)
     diagnosis_codes: list[str] = Field(min_length=1, max_length=10)
     primary_code: Optional[str] = None
-    status: Literal["draft", "completed", "cancelled"] = "completed"
-    consultation_date: Optional[str] = None
+    consultation_date: Optional[date] = None
 
     @field_validator("consultation_date")
     @classmethod
-    def validate_consultation_date(cls, value: Optional[str]) -> Optional[str]:
+    def validate_consultation_date(cls, value: Optional[date]) -> Optional[date]:
         if value is None:
             return None
-        try:
-            parsed = date.fromisoformat(value.strip())
-        except (AttributeError, ValueError):
-            raise ValueError("consultation_date must be a valid date in YYYY-MM-DD format")
-        return parsed.isoformat()
+        if value > date.today() + timedelta(days=1):
+            raise ValueError("consultation_date must not be later than tomorrow")
+        return value
 
     @field_validator("patient_id")
     @classmethod
@@ -63,7 +60,6 @@ class ConsultationOut(BaseModel):
     id: str
     consultation_date: str
     treatment_notes: str
-    status: str
     patient_id: str
     patient_name: str
     doctor_name: str

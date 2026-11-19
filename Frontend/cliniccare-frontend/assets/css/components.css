@@ -84,11 +84,10 @@
   text-transform: uppercase;
 }
 
-.consultation-col-patient { width: 14%; }
-.consultation-col-date { width: 14%; }
-.consultation-col-diagnosis { width: 46%; }
-.consultation-col-notes { width: 18%; }
-.consultation-col-status { width: 8%; }
+.consultation-col-patient { width: 15%; }
+.consultation-col-date { width: 16%; }
+.consultation-col-diagnosis { width: 47%; }
+.consultation-col-notes { width: 22%; }
 
 .data-table tbody tr:hover {
   background: rgba(232, 243, 243, 0.35);

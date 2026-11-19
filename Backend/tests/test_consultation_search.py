@@ -51,12 +51,12 @@ def consultation_search_client(client):
             ],
         )
         conn.executemany(
-            "INSERT INTO consultations (id, patient_id, doctor_id, consultation_date, treatment_notes, status) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO consultations (id, patient_id, doctor_id, consultation_date, treatment_notes) VALUES (?, ?, ?, ?, ?)",
             [
-                (CONSULT_1_ID, PATIENT_1_ID, DOCTOR_1_ID, "2026-11-17 09:00:00", "Patient has cholera symptoms and dehydration.", "completed"),
-                (CONSULT_2_ID, PATIENT_1_ID, DOCTOR_1_ID, "2026-11-16 08:00:00", "Routine follow-up after fever episode.", "completed"),
-                (CONSULT_3_ID, PATIENT_2_ID, DOCTOR_2_ID, "2026-11-15 15:00:00", "Patient reports cholera-like illness and diarrhea.", "completed"),
-                (CONSULT_4_ID, PATIENT_3_ID, DOCTOR_1_ID, "2026-11-14 12:00:00", "Respiratory symptoms and sore throat.", "draft"),
+                (CONSULT_1_ID, PATIENT_1_ID, DOCTOR_1_ID, "2026-11-17", "Patient has cholera symptoms and dehydration."),
+                (CONSULT_2_ID, PATIENT_1_ID, DOCTOR_1_ID, "2026-11-16", "Routine follow-up after fever episode."),
+                (CONSULT_3_ID, PATIENT_2_ID, DOCTOR_2_ID, "2026-11-15", "Patient reports cholera-like illness and diarrhea."),
+                (CONSULT_4_ID, PATIENT_3_ID, DOCTOR_1_ID, "2026-11-14", "Respiratory symptoms and sore throat."),
             ],
         )
         conn.executemany(

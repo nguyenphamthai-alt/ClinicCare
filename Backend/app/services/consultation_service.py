@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import date
 
 from fastapi import HTTPException
 
@@ -25,10 +26,9 @@ class ConsultationService:
                 patient_id,
                 doctor_id,
                 body.treatment_notes,
-                body.status,
                 codes,
                 body.primary_code,
-                body.consultation_date,
+                body.consultation_date.isoformat() if body.consultation_date else date.today().isoformat(),
             )
         except sqlite3.Error:
             db.rollback()

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ConsultationFormState, DiagnosisItem, Patient } from '~/types'
+import { todayLocal } from '~/utils/date'
 
 definePageMeta({
   middleware: 'auth',
@@ -10,15 +11,16 @@ definePageMeta({
 
 const api = useApi()
 const MAX_DIAGNOSES = 10
+const initialConsultationDate = todayLocal()
+const maxConsultationDate = todayLocal()
 
 const form = reactive<ConsultationFormState>({
   patientId: '',
   patientName: '',
-  consultationDate: new Date().toISOString().slice(0, 10),
+  consultationDate: initialConsultationDate,
   diagnosisCodes: [],
   primaryCode: '',
-  treatmentNotes: '',
-  status: 'completed'
+  treatmentNotes: ''
 })
 
 const patientQuery = ref('')
@@ -162,6 +164,16 @@ const submitConsultation = async () => {
     return
   }
 
+  if (!form.consultationDate) {
+    submitError.value = 'Consultation date is required.'
+    return
+  }
+
+  if (form.consultationDate > maxConsultationDate) {
+    submitError.value = 'Consultation date cannot be in the future.'
+    return
+  }
+
   if (!form.treatmentNotes.trim()) {
     submitError.value = 'Treatment notes are required.'
     return
@@ -175,8 +187,7 @@ const submitConsultation = async () => {
       consultation_date: form.consultationDate,
       treatment_notes: form.treatmentNotes.trim(),
       diagnosis_codes: form.diagnosisCodes,
-      primary_code: form.primaryCode || form.diagnosisCodes[0],
-      status: form.status
+      primary_code: form.primaryCode || form.diagnosisCodes[0]
     })
 
     await navigateTo('/consultations')
@@ -250,18 +261,14 @@ const loadDiagnosisSuggestions = async () => {
         <div class="field-column">
           <div class="field-group">
             <label for="consultation-date">Consultation date</label>
-            <input id="consultation-date" v-model="form.consultationDate" class="form-control" type="date" />
-          </div>
-        </div>
-
-        <div class="field-column">
-          <div class="field-group">
-            <label for="status">Status</label>
-            <select id="status" v-model="form.status" class="form-control">
-              <option value="completed">Completed</option>
-              <option value="draft">Draft</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+            <input
+              id="consultation-date"
+              v-model="form.consultationDate"
+              class="form-control"
+              type="date"
+              :max="maxConsultationDate"
+              required
+            />
           </div>
         </div>
 
